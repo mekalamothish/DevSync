@@ -1,0 +1,47 @@
+@model DevSync.Web.Features.Notes.Preview.ViewModel
+@{ ViewData["Title"] = Model.Title; }
+<div class="mx-auto max-w-4xl space-y-6">
+    <a href="/notes/@Model.Id" class="text-sm text-brand-600">← Back to note</a>
+    <div class="rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm leading-7 text-brand-700">Private preview of your saved note.@(Model.IsArchived ? " This note is archived." : " Save editor changes to update this preview.")</div>
+    <article class="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10">
+        <header class="border-b border-slate-100 pb-7"><p class="text-xs text-slate-500">@(Model.NotebookName ?? "No notebook") · Private</p><h1 class="mt-3 break-words text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">@Model.Title</h1><div class="mt-4 flex flex-wrap gap-2">@foreach (var tag in Model.Tags) { <span class="rounded-full bg-brand-50 px-3 py-1 text-xs text-brand-700">#@tag</span> }</div><p class="mt-4 text-xs text-slate-500">Updated <time datetime="@Model.UpdatedAt.ToString("O")">@Model.UpdatedAt.ToString("MMM d, yyyy HH:mm 'UTC'")</time></p></header>
+        <div class="mt-7 space-y-6">
+            @if (Model.Blocks.Count == 0) { <p class="text-sm text-slate-500">This note is waiting for its first block. Return to the editor to add one.</p> }
+            @foreach (var block in Model.Blocks)
+            {
+                @switch (block.Kind)
+                {
+                    case "richtext":
+                        <div class="article-content">@Html.Raw(DevSync.Web.Common.Content.RichTextDocument.Render(block.Content))</div>
+                        break;
+                    case "heading":
+                        <h2 class="break-words text-2xl font-semibold leading-9 tracking-tight">@block.Content</h2>
+                        break;
+                    case "code":
+                        <section class="code-frame overflow-hidden rounded-2xl" aria-label="Code snippet"><p class="border-b border-slate-700 px-5 py-3 text-xs text-slate-300">@(string.IsNullOrWhiteSpace(block.Language) ? "Code snippet" : block.Language)</p><pre data-highlight-code="@block.Language" class="overflow-x-auto code-preview p-5 text-sm leading-7"><code>@block.Content</code></pre></section>
+                        break;
+                    case "checklist":
+                        <ul class="space-y-3" aria-label="Checklist">
+                            @foreach (var line in block.Content.Split('\n').Where(line => !string.IsNullOrWhiteSpace(line)))
+                            {
+                                var item = line.Trim();
+                                var complete = item.StartsWith("[x]", StringComparison.OrdinalIgnoreCase);
+                                var content = complete || item.StartsWith("[ ]", StringComparison.Ordinal) ? item[3..].TrimStart() : item;
+                                <li class="flex items-start gap-3 text-sm leading-7"><span class="mt-1 flex size-5 shrink-0 items-center justify-center rounded border @(complete ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300")" aria-label="@(complete ? "Completed" : "Open")">@(complete ? "✓" : "")</span><span class="break-words @(complete ? "text-slate-600 line-through" : "text-slate-600")">@content</span></li>
+                            }
+                        </ul>
+                        break;
+                    case "article":
+                        <section class="rounded-2xl border border-brand-100 bg-brand-50/50 p-5"><p class="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-700">Linked article @(block.IsDraft ? "· your private draft" : "")</p>@if (block.ArticleUrl is not null) { <a class="break-words text-lg font-semibold text-brand-600 underline underline-offset-4" href="@block.ArticleUrl">@block.ArticleTitle →</a> } else { <p class="text-sm text-slate-500">This article is no longer available.</p> }@if (!string.IsNullOrWhiteSpace(block.Content)) { <p class="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">@block.Content</p> }</section>
+                        break;
+                    default:
+                        <p class="whitespace-pre-wrap break-words text-base leading-8 text-slate-600">@block.Content</p>
+                        break;
+                }
+            }
+        </div>
+    </article>
+    @if (!Model.IsArchived) { <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5"><p class="text-sm text-slate-500">Turn a saved idea into a revision prompt.</p><a class="font-semibold text-brand-600" href="/revision/create?noteId=@Model.Id">Create revision card →</a></div> }
+</div>
+
+@section Scripts { <link rel="stylesheet" href="~/vendor/code/note-code.css" asp-append-version="true" /><script type="module" src="~/vendor/code/note-code.js" asp-append-version="true"></script> }

@@ -1,0 +1,18 @@
+@model DevSync.Web.Features.Account.SignIn.Command
+@{ ViewData["Title"] = "Sign in"; }
+<p class="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-600">Welcome back</p>
+<h1 class="text-3xl font-semibold tracking-tight">Sign in to DevSync</h1>
+<p class="mb-7 mt-3 text-sm leading-6 text-slate-500">Pick up where your curiosity left off.</p>
+<form asp-action="SignIn" method="post" class="space-y-5">
+    <partial name="_ValidationSummary" />
+    <input asp-for="ReturnUrl" type="hidden" />
+    <div><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-input" type="email" autocomplete="username" /><span asp-validation-for="Email" class="form-error"></span></div>
+    <div><label asp-for="Password" class="form-label"></label><input asp-for="Password" class="form-input" autocomplete="current-password" /><span asp-validation-for="Password" class="form-error"></span></div>
+    <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <label class="flex items-center gap-2 text-slate-500"><input asp-for="RememberMe" class="size-4 accent-brand-600" /> Remember me</label>
+        <a href="/account/forgot-password" class="font-medium text-brand-600 hover:underline">Forgot password?</a>
+    </div>
+    <button type="submit" class="form-button w-full">Sign in <span class="ml-3" aria-hidden="true">→</span></button>
+</form>
+<p class="mt-7 border-t border-slate-100 pt-6 text-center text-sm text-slate-500">New to DevSync? <a href="/account/register" class="font-semibold text-brand-600 hover:underline">Create an account</a></p>
+<p class="mt-4 text-center text-xs text-slate-600"><a href="/account/resend-verification" class="hover:text-brand-600">Resend verification email</a></p>

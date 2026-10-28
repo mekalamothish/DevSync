@@ -1,0 +1,6 @@
+@model DevSync.Web.Features.Moderation.ReportFormModel
+@{var key=Model.CommentId?.ToString()??Model.PostId.ToString();}
+<details class="mt-4 rounded-xl border border-slate-100 p-4"><summary class="cursor-pointer text-xs text-slate-500">Report @(Model.CommentId is null ? "article" : "comment")</summary>
+<form method="post" action="/blogs/@Model.PostId/report" class="mt-4 space-y-3">@Html.AntiForgeryToken()@if(Model.CommentId is not null){<input type="hidden" name="CommentId" value="@Model.CommentId"/>}
+<div><label for="report-category-@key" class="form-label">Category</label><select id="report-category-@key" name="Category" class="form-input"><option value="spam">Spam</option><option value="abuse">Abuse</option><option value="unsafe">Unsafe content</option><option value="copyright">Copyright concern</option><option value="other">Other</option></select></div>
+<div><label for="report-details-@key" class="form-label">Explain your concern</label><textarea id="report-details-@key" name="Details" rows="3" maxlength="2000" required class="form-input"></textarea></div><button class="rounded-xl border border-slate-200 px-4 py-3 text-sm">Submit report</button><p class="text-xs text-slate-500">Reports are private to authorized reviewers.</p></form></details>

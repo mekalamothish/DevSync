@@ -1,0 +1,45 @@
+name: Verify DevSync
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: devsync_tests
+          POSTGRES_USER: devsync
+          POSTGRES_PASSWORD: ci-only-isolated-database
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U devsync -d devsync_tests"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DEVSYNC_TEST_CONNECTION: Host=localhost;Port=5432;Database=devsync_tests;Username=devsync;Password=ci-only-isolated-database
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run css:build
+      - run: npm run test:client
+      - run: dotnet restore DevSync.slnx --locked-mode
+      - run: dotnet build DevSync.slnx -c Release --no-restore
+      - run: dotnet test tests/DevSync.Tests -c Release --no-build --no-restore --logger trx
+      - run: dotnet publish src/DevSync.Web -c Release --no-build --no-restore -o artifacts/publish
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: tests/DevSync.Tests/TestResults/*.trx

@@ -1,0 +1,13 @@
+@model DevSync.Web.Features.Account.RequestEmail.Command
+@{
+    var reset = (bool)ViewData["ResetPassword"]!;
+    ViewData["Title"] = reset ? "Recover your account" : "Verify your email";
+}
+<h1 class="text-3xl font-semibold tracking-tight">@ViewData["Title"]</h1>
+<p class="mb-7 mt-3 text-sm leading-7 text-slate-500">@(reset ? "Enter your email and we'll send a password recovery link if your account is eligible." : "Request another verification link for your account.")</p>
+<form asp-action="@(reset ? "ForgotPassword" : "ResendVerification")" method="post" class="space-y-5">
+    <partial name="_ValidationSummary" />
+    <div><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-input" type="email" autocomplete="email" /><span asp-validation-for="Email" class="form-error"></span></div>
+    <button type="submit" class="form-button w-full">Send link</button>
+</form>
+<a href="/account/sign-in" class="mt-6 block text-center text-sm font-medium text-brand-600">Back to sign in</a>

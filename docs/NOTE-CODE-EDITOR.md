@@ -1,0 +1,11 @@
+# Code blocks in personal notes
+
+In **Study notes**, open **Edit note**, select **Code snippet** under **Add a block**, and click **Add block**. Enter a language such as **C#**, then paste or type your code. The editor and saved preview show syntax colors for keywords/modifiers, class names, methods, identifiers, strings, comments and numbers. Colors use Monaco, the editor used by VS Code, with a dark theme. This is lexical highlighting; compiler diagnostics and semantic IntelliSense are not included.
+
+Click **Format code** to adjust spacing, line breaks and indentation. Formatting supports C#, JavaScript, TypeScript, JSON, HTML and CSS. SQL, Python, XML, YAML and Markdown have syntax colors but no formatter. Unknown languages remain plain text. Formatting does not repair invalid syntax: errors leave the original source unchanged. An outdated formatting result cannot replace newer typing or a changed language/deleted block. Undo in the color editor restores the previous code.
+
+Formatting updates the current block. Wait for **Saved** or click **Save note**, then open **Saved preview** to see persisted content. **Use plain text** switches to the ordinary textarea; switching back retains its edits. Tab indents inside the color editor; Ctrl+M toggles keyboard tab navigation. The textarea remains available if editor assets fail to load or JavaScript is unavailable. Archived notes are read-only.
+
+C# is parsed and formatted with Roslyn in the application, behind note ownership, antiforgery, request-size and cancellation checks. Formatting never executes the source or persists it directly. Other supported formatters use Prettier locally in the browser. Note version checks and autosave still govern persistence. Source text is encoded on initial rendering, and Monaco produces escaped token markup for previews. Existing note limits still apply, including 60,000 total characters.
+
+Run `npm ci` and `npm run css:build` before publishing. This bundles the pinned Monaco/Prettier dependencies and worker assets into `wwwroot/vendor/code`, alongside Tailwind CSS. Docker and CI build these assets and run client tests. Generated assets are ignored by Git; license files are copied into the bundle. Editor assets are served by this application and require no third-party CDN.

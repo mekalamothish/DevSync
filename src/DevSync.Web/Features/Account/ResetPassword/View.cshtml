@@ -1,0 +1,11 @@
+@model DevSync.Web.Features.Account.ResetPassword.Command
+@{ ViewData["Title"] = "Reset password"; }
+<h1 class="text-3xl font-semibold tracking-tight">Choose a new password</h1>
+<p class="mb-7 mt-3 text-sm leading-7 text-slate-500">Use at least 12 characters, including uppercase, lowercase, a number, and a symbol.</p>
+<form asp-action="ResetPassword" method="post" class="space-y-5">
+    <partial name="_ValidationSummary" />
+    <input asp-for="UserId" type="hidden" /><input asp-for="Token" type="hidden" />
+    <div><label asp-for="Password" class="form-label"></label><input asp-for="Password" class="form-input" autocomplete="new-password" /><span asp-validation-for="Password" class="form-error"></span></div>
+    <div><label asp-for="ConfirmPassword" class="form-label"></label><input asp-for="ConfirmPassword" class="form-input" autocomplete="new-password" /><span asp-validation-for="ConfirmPassword" class="form-error"></span></div>
+    <button type="submit" class="form-button w-full">Update password</button>
+</form>

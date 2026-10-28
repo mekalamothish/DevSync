@@ -1,0 +1,26 @@
+**/bin/
+**/obj/
+node_modules/
+.cache/
+**/.local/
+.env
+.env.*
+!.env.example
+src/DevSync.Web/wwwroot/css/site.css
+artifacts/
+TestResults/
+*.user
+*.suo
+.DS_Store
+
+# Bundled code editor assets are generated from locked npm dependencies.
+src/DevSync.Web/wwwroot/vendor/code/
+
+# Local IDE state and deployment keys must never be committed.
+.idea/
+.vscode/
+*.pem
+*.key
+*.ppk
+id_rsa*
+id_ed25519*

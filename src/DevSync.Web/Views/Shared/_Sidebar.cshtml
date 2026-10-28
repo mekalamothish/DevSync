@@ -1,0 +1,42 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    string NavClass(bool active) => "sidebar-link" + (active ? " is-active" : "");
+}
+<aside id="sidebar" class="workspace-sidebar hidden border-r lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col" aria-label="Workspace navigation">
+    <a href="/" class="flex h-18 shrink-0 items-center gap-3 border-b border-white/10 px-7" aria-label="DevSync home">
+        <span class="flex size-9 items-center justify-center rounded-xl bg-brand-600 text-white">
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5M14 4l-4 16" /></svg>
+        </span>
+        <span class="text-xl font-semibold tracking-tight text-white">DevSync<span class="text-brand-300">.</span></span>
+    </a>
+    <nav class="min-h-0 space-y-6 px-4 py-7 lg:overflow-y-auto" aria-label="Main">
+        <div>
+            <p class="mb-3 px-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9cb7c5]">Your workspace</p>
+            <a href="/" aria-current="@(controller == "Home" ? "page" : null)" class="@NavClass(controller == "Home")">
+                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3V10Z" /><path d="M9 20v-7h6v7" /></svg>
+                Developer Hub
+            </a>
+            <a href="/blogs" class="@NavClass(controller == "Blogs" && action == "Explore")" aria-current="@(controller == "Blogs" && action == "Explore" ? "page" : null)">Explore blogs</a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a href="/blogs/mine" class="@NavClass(controller == "Blogs" && action == "MyBlogs")" aria-current="@(controller == "Blogs" && action == "MyBlogs" ? "page" : null)">My blogs</a>
+                <a href="/blogs/bookmarks" class="@NavClass(controller == "Blogs" && action == "Bookmarks")" aria-current="@(controller == "Blogs" && action == "Bookmarks" ? "page" : null)">Saved articles</a>
+                <a href="/images" class="@NavClass(controller == "Images")" aria-current="@(controller == "Images" ? "page" : null)">My images</a>
+                <a href="/notes" class="@NavClass(controller == "Notes")" aria-current="@(controller == "Notes" ? "page" : null)">Study notes</a>
+                <a href="/revision" class="@NavClass(controller == "Revision")" aria-current="@(controller == "Revision" ? "page" : null)">Revision</a>
+                <a href="/tasks" class="@NavClass(controller == "Tasks" && action != "Board")" aria-current="@(controller == "Tasks" && action != "Board" ? "page" : null)">My tasks</a>
+                <a href="/tasks/board" class="@NavClass(controller == "Tasks" && action == "Board")" aria-current="@(controller == "Tasks" && action == "Board" ? "page" : null)">Kanban board</a>
+                <a href="/teams" class="@NavClass(controller == "Teams")" aria-current="@(controller == "Teams" ? "page" : null)">Teams</a>
+                <a href="/account/settings" class="@NavClass(controller == "Settings" || controller == "Verification")">Settings</a>
+                @if (User.IsInRole("Moderator") || User.IsInRole("Administrator")) { <a href="/moderation" class="@NavClass(controller == "Moderation")">Moderation</a> }
+                <a href="/account/profile" class="@NavClass(controller == "Profiles")" aria-current="@(controller == "Profiles" ? "page" : null)">My profile</a>
+            }
+        </div>
+        <div class="sidebar-note rounded-xl p-4">
+            <p class="text-xs font-semibold text-[#a6f0d9]">Room for your next idea</p>
+            <p class="mt-2 text-xs leading-6 text-[#c3d6df]">Knowledge, learning, and collaboration. All in one place.</p>
+        </div>
+    </nav>
+    <div class="mt-auto shrink-0 border-t border-white/10 px-7 py-5 text-xs leading-6 text-[#9cb7c5]">A workspace built around<br /><span class="font-medium text-[#cfdee5]">how developers grow.</span></div>
+</aside>

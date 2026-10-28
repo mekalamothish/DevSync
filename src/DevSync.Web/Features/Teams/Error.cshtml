@@ -1,0 +1,3 @@
+@model string
+@{ ViewData["Title"] = "Team request"; var id = ViewData["TeamId"] as Guid?; }
+<div class="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8"><h1 class="text-2xl font-semibold">The request needs attention</h1><p class="mt-4 text-sm leading-7 text-slate-600" role="alert">@Model</p><a class="mt-6 inline-block text-sm text-brand-600" href="@(id is null ? "/teams" : "/teams/" + id)">Reload workspace →</a></div>

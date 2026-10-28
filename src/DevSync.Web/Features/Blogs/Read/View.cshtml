@@ -1,0 +1,54 @@
+@using System.Security.Claims
+@model DevSync.Web.Features.Blogs.Read.ViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+}
+<div class="mx-auto max-w-4xl space-y-8">
+    <a class="text-sm text-brand-600" href="@(Model.Preview ? "/blogs/" + Model.Id + "/edit" : "/blogs")">← @(Model.Preview ? "Back to editor" : "Explore blogs")</a>
+    @if (TempData["Success"] is string reportSuccess) { <p class="rounded-xl bg-brand-50 p-4 text-sm text-brand-700" role="status">@reportSuccess</p> }
+    @if (Model.Preview) { <div class="rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm text-brand-700">Private preview of your saved draft. Readers see the published copy.</div> }
+    <article class="rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-10 lg:p-12">
+        <header class="border-b border-slate-100 pb-8">
+            <div class="mb-5 flex flex-wrap gap-2">@foreach (var tag in Model.Tags) { <a href="/blogs?tag=@Uri.EscapeDataString(tag)" class="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">@tag</a> }</div>
+            <h1 class="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">@Model.Title</h1><p class="mt-5 text-lg leading-8 text-slate-500">@Model.Summary</p>
+            <div class="mt-6 flex flex-wrap items-center gap-3 text-sm text-slate-500"><span class="flex size-9 items-center justify-center rounded-full bg-brand-50 font-semibold text-brand-700" aria-hidden="true">@(Model.Author.Length > 0 ? Model.Author[..1] : "D")</span>@if (Model.AuthorHandle is not null) { <a href="/people/@Model.AuthorHandle" class="font-medium text-brand-600">@Model.Author</a> } else { <span class="font-medium text-ink">@Model.Author</span> } @if (Model.PublisherVerified) { <span class="text-xs text-brand-600">Verified publisher</span> }<span aria-hidden="true">·</span><time datetime="@Model.Date.ToString("O")">@Model.Date.ToString("MMM d, yyyy")</time></div>
+        </header>
+        <div class="article-content mt-8">@Html.Raw(Model.Html)</div>
+    </article>
+    @if (!Model.Preview)
+    {
+        <section class="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5" aria-label="Article actions">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <form method="post" action="/blogs/@Model.Id/react">@Html.AntiForgeryToken()<input type="hidden" name="enabled" value="@((!Model.Reacted).ToString().ToLowerInvariant())" /><button class="rounded-xl border border-brand-100 px-4 py-3 text-sm text-brand-700" type="submit" aria-pressed="@Model.Reacted.ToString().ToLowerInvariant()">@(Model.Reacted ? "Liked" : "Like") · @Model.Reactions</button></form>
+                <form method="post" action="/blogs/@Model.Id/bookmark">@Html.AntiForgeryToken()<input type="hidden" name="enabled" value="@((!Model.Bookmarked).ToString().ToLowerInvariant())" /><button class="rounded-xl border border-brand-100 px-4 py-3 text-sm text-brand-700" type="submit" aria-pressed="@Model.Bookmarked.ToString().ToLowerInvariant()">@(Model.Bookmarked ? "Saved · remove" : "Save article")</button></form>
+            }
+            else { <p class="text-sm text-slate-500">@Model.Reactions likes · <a href="/account/sign-in?returnUrl=@Uri.EscapeDataString("/blogs/" + Model.Slug)" class="text-brand-600">Sign in to like, save, or comment</a></p> }
+            @if (userId == Model.AuthorId.ToString()) { <a href="/blogs/@Model.Id/edit" class="ml-auto text-sm font-semibold text-brand-600">Edit article →</a> }
+        </section>
+        @if (User.Identity?.IsAuthenticated == true) { <partial name="/Features/Moderation/_ReportForm.cshtml" model="new DevSync.Web.Features.Moderation.ReportFormModel(Model.Id)" /> }
+        <section id="comments" class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8" aria-labelledby="comments-title">
+            <h2 id="comments-title" class="text-xl font-semibold">Discussion <span class="text-slate-600">(@Model.CommentCount)</span></h2>
+            @if (TempData["CommentError"] is string error) { <p class="mt-4 text-sm text-red-700" role="alert">@error</p> }
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <form method="post" action="/blogs/@Model.Id/comments" class="my-6 space-y-3">@Html.AntiForgeryToken()<label for="comment" class="form-label">Add to the conversation</label><textarea id="comment" name="Body" rows="3" class="form-input" maxlength="2000" required placeholder="Ask a question or share an insight…"></textarea><button class="form-button" type="submit">Post comment</button></form>
+            }
+            @if (Model.CommentCount == 0) { <p class="mt-5 text-sm text-slate-500">Start a thoughtful conversation about this article.</p> }
+            @foreach (var comment in Model.Comments)
+            {
+                <article class="border-t border-slate-100 py-5"><div class="flex flex-wrap justify-between gap-3 text-xs text-slate-500"><span class="font-semibold text-ink">@comment.Author</span><time datetime="@comment.Date.ToString("O")">@comment.Date.ToString("MMM d, yyyy HH:mm 'UTC'")</time></div><p class="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">@comment.Body</p>
+                    @if (User.Identity?.IsAuthenticated == true) { <partial name="/Features/Moderation/_ReportForm.cshtml" model="new DevSync.Web.Features.Moderation.ReportFormModel(Model.Id, comment.Id)" /> }
+                    @if (userId == comment.UserId.ToString()) { <form method="post" action="/blogs/@Model.Id/comments/@comment.Id/delete" class="mt-3">@Html.AntiForgeryToken()<button class="text-xs text-slate-500 underline" type="submit">Delete my comment</button></form> }
+                </article>
+            }
+            <nav class="mt-4 flex justify-between text-sm text-brand-600" aria-label="Comment pages">
+                @if (Model.CommentPage > 1) { <a href="/blogs/@Model.Slug?commentPage=@(Model.CommentPage - 1)#comments">← Earlier comments</a> }
+                @if (Model.CommentPage < Model.CommentPages) { <a class="ml-auto" href="/blogs/@Model.Slug?commentPage=@(Model.CommentPage + 1)#comments">More comments →</a> }
+            </nav>
+        </section>
+    }
+</div>
+
+@section Scripts { <link rel="stylesheet" href="~/vendor/code/note-code.css" asp-append-version="true" /><script type="module" src="~/vendor/code/note-code.js" asp-append-version="true"></script> }

@@ -1,0 +1,15 @@
+@model DevSync.Web.Features.Account.Register.Command
+@{ ViewData["Title"] = "Create account"; }
+<p class="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-600">Make room for your next idea</p>
+<h1 class="text-3xl font-semibold tracking-tight">Join DevSync</h1>
+<p class="mb-7 mt-3 text-sm leading-6 text-slate-500">Create your account. We'll send a link to verify your email.</p>
+<form asp-action="Register" method="post" class="space-y-4">
+    <partial name="_ValidationSummary" />
+    <div><label asp-for="DisplayName" class="form-label"></label><input asp-for="DisplayName" class="form-input" autocomplete="name" /><span asp-validation-for="DisplayName" class="form-error"></span></div>
+    <div><label asp-for="Handle" class="form-label"></label><input asp-for="Handle" class="form-input" autocomplete="nickname" spellcheck="false" aria-describedby="handle-help" /><p id="handle-help" class="mt-1 text-xs leading-5 text-slate-600">3–40 letters, numbers, or underscores. Handles are saved in lowercase.</p><span asp-validation-for="Handle" class="form-error"></span></div>
+    <div><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-input" type="email" autocomplete="email" /><span asp-validation-for="Email" class="form-error"></span></div>
+    <div><label asp-for="Password" class="form-label"></label><input asp-for="Password" class="form-input" autocomplete="new-password" aria-describedby="password-help" /><p id="password-help" class="mt-1 text-xs leading-5 text-slate-600">At least 12 characters, with uppercase, lowercase, a number, and a symbol.</p><span asp-validation-for="Password" class="form-error"></span></div>
+    <div><label asp-for="ConfirmPassword" class="form-label"></label><input asp-for="ConfirmPassword" class="form-input" autocomplete="new-password" /><span asp-validation-for="ConfirmPassword" class="form-error"></span></div>
+    <button type="submit" class="form-button w-full">Create account <span class="ml-3" aria-hidden="true">→</span></button>
+</form>
+<p class="mt-6 text-center text-sm text-slate-500">Already have an account? <a href="/account/sign-in" class="font-semibold text-brand-600 hover:underline">Sign in</a></p>

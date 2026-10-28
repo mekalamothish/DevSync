@@ -1,0 +1,43 @@
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@model DevSync.Web.Features.Tasks.Board.ViewModel
+@{
+    ViewData["Title"] = "Task board";
+    var filters = new DevSync.Web.Features.Tasks.Common.Filters(Model.Search, Model.Priority, Model.State, Model.Assignment, Model.Due, Model.Sort);
+    var returnUrl = $"/tasks/board?boardId={Model.BoardId}&search={Uri.EscapeDataString(Model.Search)}&priority={Model.Priority}&state={Model.State}&assignment={Model.Assignment}&due={Model.Due}&sort={Model.Sort}";
+}
+<div class="mx-auto min-w-0 max-w-6xl space-y-7">
+    <header class="flex flex-wrap items-end justify-between gap-5"><div><p class="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-600">See your next step</p><h1 class="break-words text-4xl font-semibold tracking-tight">@(Model.BoardId is null ? "Task board" : Model.BoardName)</h1><p class="mt-3 text-sm leading-7 text-slate-500">Make progress visible, one task at a time.</p></div>@if (Model.BoardId is not null) { <a class="form-button" href="/tasks/create?boardId=@Model.BoardId">New task ＋</a> }</header>
+    @if (TempData["Error"] is string error) { <p class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">@error</p> }
+    @if (TempData["Success"] is string success) { <p class="rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm text-brand-700" role="status">@success</p> }
+    <div class="flex flex-wrap items-center justify-between gap-4"><nav class="flex gap-3 text-sm" aria-label="Task views"><a href="/tasks?boardId=@Model.BoardId&search=@Uri.EscapeDataString(Model.Search)&priority=@Model.Priority&state=@Model.State&assignment=@Model.Assignment&due=@Model.Due&sort=@Model.Sort" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-slate-500">List</a><a href="/tasks/board?boardId=@Model.BoardId" class="rounded-xl bg-brand-50 px-4 py-2 font-semibold text-brand-700" aria-current="page">Kanban board</a></nav><a class="text-xs text-brand-600" href="/tasks?state=archived">View archived tasks →</a></div>
+    <details class="rounded-2xl border border-slate-200 bg-white p-5" open="@(Model.Boards.Count == 0)"><summary class="cursor-pointer text-sm font-semibold text-brand-600">Create a board</summary><form method="post" action="/tasks/boards" class="mt-4 flex flex-wrap items-end gap-3">@Html.AntiForgeryToken()<div class="min-w-48 flex-1"><label for="new-board-name" class="form-label">Board name</label><input id="new-board-name" name="Name" class="form-input" maxlength="80" required placeholder="e.g. A project in progress" /></div><button class="form-button" type="submit">Create board</button></form></details>
+    @if (Model.BoardId is null)
+    {
+        <section class="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-12 text-center"><h2 class="text-xl font-semibold">Your first board is a blank canvas</h2><p class="mx-auto mt-3 max-w-md text-sm leading-7 text-slate-500">Create a board to organize personal tasks across To do, In progress, and Done.</p></section>
+    }
+    else
+    {
+        @await Html.PartialAsync("/Features/Tasks/Common/_Filters.cshtml", filters, new ViewDataDictionary(ViewData) { ["Boards"] = Model.Boards, ["BoardId"] = Model.BoardId, ["BoardView"] = true })
+        <p id="task-board-status" class="rounded-xl border border-brand-100 bg-brand-50 p-4 text-xs leading-6 text-brand-700" role="status" aria-live="polite">@(Model.IsFiltered ? "Filters or sorting are active. Clear them to drag or reorder tasks. Column selectors still work." : "Drag tasks to move them. Drop on another task to place it before that task. Column selectors and Up/Down buttons work with a keyboard.")</p>
+        <noscript><p class="text-xs leading-6 text-slate-500">Use the column selectors and Up/Down buttons to move tasks without JavaScript.</p></noscript>
+        <div id="task-board" data-drag-enabled="@((!Model.IsFiltered).ToString().ToLowerInvariant())" class="min-w-0 overflow-x-auto pb-4" aria-label="Kanban board">
+            <div class="grid min-w-[52rem] grid-cols-3 items-start gap-4">
+                @foreach (var column in Model.Columns)
+                {
+                    <section data-task-column data-column-id="@column.Id" class="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-4" aria-labelledby="column-@column.Id"><header class="mb-4 flex items-center justify-between gap-3"><h2 id="column-@column.Id" class="text-sm font-semibold">@column.Name</h2><span class="rounded-full bg-white px-2.5 py-1 text-xs text-slate-500">@column.Tasks.Count</span></header><div class="space-y-3">
+                        @if (column.Tasks.Count == 0) { <p class="rounded-xl border border-dashed border-slate-200 p-5 text-center text-xs leading-6 text-slate-500">@(Model.IsFiltered ? "No matching tasks in this column." : "Drop a task here, or create a new task to get started.")</p> }
+                        @foreach (var task in column.Tasks)
+                        {
+                            <article data-task-card data-task-id="@task.Id" data-task-position="@task.Position" draggable="@((!Model.IsFiltered).ToString().ToLowerInvariant())" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs capitalize @(task.Priority == "urgent" ? "text-red-700" : task.Priority == "high" ? "text-amber-700" : "text-brand-600")">@task.Priority priority</p><h3 class="mt-2 break-words text-base font-semibold"><a href="/tasks/@task.Id">@task.Title</a></h3><div class="mt-3 space-y-1 text-xs text-slate-500"><p>@(task.AssignedToMe ? "Assigned to me" : "Unassigned")</p>@if (task.DueDate is not null) { <p>Due <time datetime="@task.DueDate.Value.ToString("yyyy-MM-dd")">@task.DueDate.Value.ToString("MMM d, yyyy")</time></p> }@if (task.ChecklistTotal > 0) { <p>@task.ChecklistCompleted/@task.ChecklistTotal checklist items</p> }</div>
+                                <form method="post" action="/tasks/@task.Id/move" data-task-move class="mt-4 space-y-3 border-t border-slate-100 pt-3">@Html.AntiForgeryToken()<input type="hidden" name="Version" value="@task.Version" /><input type="hidden" name="BoardVersion" value="@Model.BoardVersion" /><input type="hidden" name="TargetPosition" value="" /><input type="hidden" name="returnUrl" value="@returnUrl" /><label for="task-column-@task.Id" class="text-xs font-medium text-slate-500">Move task to</label><div class="flex gap-2"><select id="task-column-@task.Id" name="ColumnId" class="form-input min-w-0 flex-1 px-2 py-2 text-xs">@foreach (var destination in Model.Columns) { <option value="@destination.Id" selected="@(task.ColumnId == destination.Id)">@destination.Name</option> }</select><button class="rounded-lg border border-brand-100 px-3 py-2 text-xs font-semibold text-brand-700" type="submit">Move</button></div>
+                                </form>
+                                @if (!Model.IsFiltered) { <div class="mt-2 flex justify-between gap-2">@foreach (var direction in new[] { "up", "down" }) { <form method="post" action="/tasks/@task.Id/move?direction=@direction">@Html.AntiForgeryToken()<input type="hidden" name="Version" value="@task.Version" /><input type="hidden" name="BoardVersion" value="@Model.BoardVersion" /><input type="hidden" name="ColumnId" value="@task.ColumnId" /><input type="hidden" name="returnUrl" value="@returnUrl" /><button type="submit" disabled="@(direction == "up" ? task.Position == 0 : task.Position == column.Tasks.Count - 1)" class="rounded-lg px-3 py-1 text-xs text-slate-500 disabled:opacity-30" aria-label="Move @task.Title @direction">@(direction == "up" ? "↑ Up" : "↓ Down")</button></form> }</div> }
+                            </article>
+                        }
+                    </div></section>
+                }
+            </div>
+        </div>
+    }
+</div>
+@section Scripts { <script src="~/js/task-board.js" asp-append-version="true" defer></script> }

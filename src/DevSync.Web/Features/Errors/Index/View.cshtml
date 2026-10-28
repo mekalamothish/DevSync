@@ -1,0 +1,10 @@
+@model DevSync.Web.Features.Errors.ViewModel
+@{
+    ViewData["Title"] = Model.StatusCode == 404 ? "Page not found" : "Something went wrong";
+}
+<section class="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-10 text-center">
+    <p class="font-mono text-sm text-brand-600">@Model.StatusCode</p>
+    <h1 class="mt-4 text-3xl font-semibold text-ink">@ViewData["Title"]</h1>
+    <p class="mt-4 leading-7 text-slate-500">@(Model.StatusCode == 404 ? "We couldn't find this page. Your workspace is just a click away." : "Please try again in a moment.")</p>
+    <a href="/" class="mt-7 inline-block rounded-xl bg-brand-600 px-5 py-3 font-medium text-white hover:bg-brand-700">Return home</a>
+</section>

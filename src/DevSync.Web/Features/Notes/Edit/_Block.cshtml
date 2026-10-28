@@ -1,0 +1,46 @@
+@model DevSync.Web.Features.Notes.Edit.Command
+@{
+    var index = (int)ViewData["BlockIndex"]!;
+    var template = index < 0;
+    var block = template ? new DevSync.Web.Features.Notes.Edit.BlockCommand { Kind = (string)ViewData["BlockKind"]! } : Model.Blocks[index];
+    var prefix = template ? "Blocks[__index__]" : $"Blocks[{index}]";
+    var blockId = template ? "template-" + block.Kind : block.Id.ToString();
+    var displayKind=block.Kind=="richtext"?"rich text":block.Kind;
+    var label = template ? displayKind + " block" : displayKind + " block " + (index + 1);
+    var blockRoute=ViewData["BlockRoute"] as string ?? $"/notes/{Model.Id}/blocks";
+}
+<section data-note-block data-block-id="@blockId" data-block-kind="@block.Kind" class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <h2 data-block-label class="text-xs font-semibold capitalize tracking-wide text-brand-700">@label</h2>
+        <div class="flex gap-2"><button type="submit" formaction="@(blockRoute)?operation=up&blockId=@block.Id" data-block-action="up" disabled="@(!template && index == 0)" aria-label="Move up @label" class="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-500 disabled:opacity-30">↑ Up</button><button type="submit" formaction="@(blockRoute)?operation=down&blockId=@block.Id" data-block-action="down" disabled="@(!template && index == Model.Blocks.Count - 1)" aria-label="Move down @label" class="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-500 disabled:opacity-30">↓ Down</button><button type="submit" formnovalidate formaction="@(blockRoute)?operation=remove&blockId=@block.Id" data-block-action="remove" aria-label="Remove @label" class="rounded-lg px-3 py-2 text-xs text-slate-500">Remove</button></div>
+    </div>
+    <input type="hidden" name="@(prefix + ".Id")" data-field="Id" value="@(template ? "" : block.Id.ToString())" /><input type="hidden" name="@(prefix + ".Kind")" data-field="Kind" value="@block.Kind" />
+    @if (block.Kind == "article")
+    {
+        <label for="note-block-@blockId-LinkedPostId" data-for-field="LinkedPostId" class="form-label">Linked article</label>
+        <select id="note-block-@blockId-LinkedPostId" name="@(prefix + ".LinkedPostId")" data-field="LinkedPostId" class="form-input" required><option value="">Choose an article</option>@foreach (var article in Model.Articles) { <option value="@article.Id" selected="@(block.LinkedPostId == article.Id)">@article.Title @(article.IsDraft ? "· your draft" : "· published")</option> }</select>
+        @Html.ValidationMessage(prefix + ".LinkedPostId", null, new { @class = "form-error" })
+        <p class="mt-2 text-xs leading-6 text-slate-500">Link one of your working drafts or a published article. Your draft links remain private.</p>
+        <label for="note-block-@blockId-Content" data-for-field="Content" class="form-label mt-4">Your notes on this article</label><textarea id="note-block-@blockId-Content" name="@(prefix + ".Content")" data-field="Content" class="form-input" rows="3" maxlength="60000" placeholder="What do you want to remember?">@block.Content</textarea>
+    }
+    else if (block.Kind == "richtext")
+    {
+        @await Html.PartialAsync("_RichTextEditor",new DevSync.Web.Common.Content.RichTextEditorModel(prefix+".Content","note-block-"+blockId+"-Content",block.Content,Model.IsArchived))
+    }
+    else if (block.Kind == "code")
+    {
+        <label for="note-block-@blockId-Language" data-for-field="Language" class="form-label">Language (optional)</label><input id="note-block-@blockId-Language" name="@(prefix + ".Language")" data-field="Language" class="form-input mb-4 sm:max-w-xs" value="@block.Language" maxlength="30" list="code-languages" placeholder="e.g. C#, JavaScript, JSON" />
+        @Html.ValidationMessage(prefix + ".Language", null, new { @class = "form-error" })
+        <label for="note-block-@blockId-Content" data-for-field="Content" class="form-label">Code</label><textarea id="note-block-@blockId-Content" name="@(prefix + ".Content")" data-field="Content" class="form-input min-h-48 font-mono leading-7" rows="8" maxlength="60000" spellcheck="false" placeholder="Paste a snippet…">@block.Content</textarea>
+        <div data-code-editor hidden class="code-editor-shell"></div>
+        <div class="mt-3 flex flex-wrap items-center gap-4"><button type="button" data-format-code disabled class="rounded-xl border border-brand-100 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">Format code</button><button type="button" data-code-plain hidden class="text-sm font-semibold text-brand-600">Use plain text</button></div>
+        <p data-code-status role="status" aria-live="polite" class="mt-2 break-words whitespace-pre-wrap text-xs leading-6 text-slate-500">Color editor and formatting load when JavaScript is available.</p>
+        <p class="mt-2 text-xs leading-6 text-slate-500">Tab indents code. Ctrl+M toggles Tab navigation. Formatting changes spacing, not code errors.</p>
+    }
+    else
+    {
+        <label for="note-block-@blockId-Content" data-for-field="Content" class="form-label">@(block.Kind == "heading" ? "Heading" : block.Kind == "checklist" ? "Checklist items" : "Text")</label><textarea id="note-block-@blockId-Content" name="@(prefix + ".Content")" data-field="Content" class="form-input @(block.Kind == "heading" ? "text-lg font-semibold" : "leading-7")" rows="@(block.Kind == "heading" ? 2 : 5)" maxlength="60000" placeholder="@(block.Kind == "heading" ? "Give this section a name…" : block.Kind == "checklist" ? "[ ] Read the docs\n[x] Try the example" : "Capture an idea…")">@block.Content</textarea>
+        @if (block.Kind == "checklist") { <p class="mt-2 text-xs leading-6 text-slate-500">One item per line. Use [ ] for an open item and [x] for a completed item.</p> }
+    }
+    @Html.ValidationMessage(prefix + ".Content", null, new { @class = "form-error" })
+</section>

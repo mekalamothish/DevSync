@@ -1,0 +1,68 @@
+name: devsync
+x-app-environment: &app-environment
+  ASPNETCORE_ENVIRONMENT: Development
+  ASPNETCORE_HTTP_PORTS: "8080"
+  # Ignore native-run connection strings and use the container Postgres settings below.
+  ConnectionStrings__DefaultConnection: ""
+  Postgres__Host: postgres
+  Postgres__Port: "5432"
+  Postgres__Database: ${POSTGRES_DB:-devsync}
+  Postgres__Username: ${POSTGRES_USER:-devsync}
+  Postgres__Password: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+  Account__PublicBaseUrl: ${ACCOUNT_PUBLIC_BASE_URL:-http://localhost:${WEB_PORT:-5180}}
+  Email__Delivery: ${EMAIL_DELIVERY:-Auto}
+  Email__From: ${EMAIL_FROM:-}
+  Email__FromName: ${EMAIL_FROM_NAME:-DevSync}
+  Email__Smtp__Host: ${EMAIL_SMTP_HOST:-smtp.gmail.com}
+  Email__Smtp__Port: ${EMAIL_SMTP_PORT:-587}
+  Email__Smtp__Username: ${EMAIL_SMTP_USERNAME:-}
+  Email__Smtp__Password: ${EMAIL_SMTP_PASSWORD:-}
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-devsync}
+      POSTGRES_USER: ${POSTGRES_USER:-devsync}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-54329}:5432"
+    volumes:
+      - devsync-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  db-init:
+    image: devsync-web:local
+    pull_policy: never
+    environment: *app-environment
+    entrypoint: ["dotnet", "DevSync.Web.dll", "--initialize-database"]
+    volumes:
+      - devsync-web-data:/app/.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    healthcheck:
+      disable: true
+  web:
+    image: devsync-web:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment: *app-environment
+    ports:
+      - "127.0.0.1:${WEB_PORT:-5180}:8080"
+    volumes:
+      - devsync-web-data:/app/.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+volumes:
+  devsync-postgres:
+  devsync-web-data:

@@ -1,0 +1,45 @@
+{
+  "name": "devsync",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "css:build": "npm run code:build && tailwindcss -i ./src/DevSync.Web/Assets/styles/site.css -o ./src/DevSync.Web/wwwroot/css/site.css --minify",
+    "css:watch": "tailwindcss -i ./src/DevSync.Web/Assets/styles/site.css -o ./src/DevSync.Web/wwwroot/css/site.css --watch",
+    "build": "npm run css:build && dotnet build DevSync.slnx",
+    "test": "dotnet test DevSync.slnx --filter Category!=Database",
+    "test:client": "node --test tests/client/*.test.mjs",
+    "preview:blogs": "node scripts/preview-blog-review.mjs",
+    "docker:up": "docker compose up -d --build --wait",
+    "docker:stop": "docker compose stop",
+    "docker:logs": "docker compose logs --tail=100 -f web db-init",
+    "start": "node scripts/with-database.mjs dotnet run --project src/DevSync.Web --no-build",
+    "dev": "npm run css:build && node scripts/with-database.mjs dotnet watch --project src/DevSync.Web",
+    "local:init": "node scripts/init-local.mjs",
+    "db:migrate": "node scripts/with-database.mjs dotnet ef database update --project src/DevSync.Infrastructure --startup-project src/DevSync.Web",
+    "db:seed": "node scripts/with-database.mjs dotnet run --project src/DevSync.Web --no-build -- --seed-roles",
+    "db:backup": "node scripts/database-recovery.mjs backup",
+    "db:restore-test": "node scripts/database-recovery.mjs restore-test",
+    "db:test": "node scripts/with-database.mjs --test dotnet test DevSync.slnx --filter Category=Database",
+    "publish": "npm run css:build && dotnet publish src/DevSync.Web -c Release -o artifacts/publish",
+    "code:build": "node scripts/build-code-editor.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.0",
+    "@tiptap/core": "3.32.0",
+    "@tiptap/extension-image": "3.32.0",
+    "@tiptap/extension-task-item": "3.32.0",
+    "@tiptap/extension-task-list": "3.32.0",
+    "@tiptap/pm": "3.32.0",
+    "@tiptap/starter-kit": "3.32.0",
+    "esbuild": "0.28.2",
+    "monaco-editor": "0.57.0",
+    "prettier": "3.9.9",
+    "tailwindcss": "4.3.0"
+  },
+  "overrides": {
+    "dompurify": "3.4.17"
+  }
+}

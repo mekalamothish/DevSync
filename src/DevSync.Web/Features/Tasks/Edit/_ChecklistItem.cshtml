@@ -1,0 +1,16 @@
+@model DevSync.Web.Features.Tasks.Edit.Command
+@{
+    var index = (int)ViewData["ChecklistIndex"]!;
+    var template = index < 0;
+    var item = template ? new DevSync.Web.Features.Tasks.Edit.ChecklistCommand() : Model.Checklist[index];
+    var prefix = template ? "Checklist[__index__]" : $"Checklist[{index}]";
+    var itemId = template ? "template" : item.Id.ToString();
+    var action = Model.IsNew ? "/tasks/create" : $"/tasks/{Model.Id}/checklist";
+}
+<div data-checklist-item data-item-id="@itemId" class="rounded-xl border border-slate-200 bg-white p-4">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3"><p data-item-number class="text-xs font-medium text-slate-500">Item @(template ? "" : (index + 1).ToString())</p><div class="flex gap-2"><button type="submit" formaction="@(action)?operation=up&itemId=@item.Id" data-checklist-action="up" disabled="@(!template && index == 0)" class="rounded-lg px-2 py-1 text-xs text-slate-500 disabled:opacity-30" aria-label="Move checklist item @(index + 1) up">↑ Up</button><button type="submit" formaction="@(action)?operation=down&itemId=@item.Id" data-checklist-action="down" disabled="@(!template && index == Model.Checklist.Count - 1)" class="rounded-lg px-2 py-1 text-xs text-slate-500 disabled:opacity-30" aria-label="Move checklist item @(index + 1) down">↓ Down</button><button type="submit" formnovalidate formaction="@(action)?operation=remove&itemId=@item.Id" data-checklist-action="remove" class="rounded-lg px-2 py-1 text-xs text-slate-500" aria-label="Remove checklist item @(index + 1)">Remove</button></div></div>
+    <input type="hidden" name="@(prefix + ".Id")" data-field="Id" value="@(template ? "" : item.Id.ToString())" />
+    <label for="task-checklist-@itemId-Text" data-for-field="Text" class="form-label">Checklist item</label><input id="task-checklist-@itemId-Text" name="@(prefix + ".Text")" data-field="Text" class="form-input" value="@item.Text" required maxlength="300" placeholder="A small, concrete step…" />
+    @Html.ValidationMessage(prefix + ".Text", null, new { @class = "form-error" })
+    <div class="mt-3 flex items-center gap-2"><input id="task-checklist-@itemId-IsCompleted" name="@(prefix + ".IsCompleted")" data-field="IsCompleted" type="checkbox" value="true" checked="@item.IsCompleted" class="size-4 accent-brand-600" /><label for="task-checklist-@itemId-IsCompleted" data-for-field="IsCompleted" class="text-xs text-slate-500">Completed</label></div>
+</div>

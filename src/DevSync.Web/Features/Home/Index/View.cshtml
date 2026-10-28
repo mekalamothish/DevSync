@@ -1,0 +1,63 @@
+@model DevSync.Web.Features.Home.Index.ViewModel
+@{
+    ViewData["Title"] = "Developer Hub";
+}
+<div class="mx-auto max-w-6xl space-y-10 lg:space-y-14">
+    <section class="hub-hero relative overflow-hidden rounded-3xl border p-7 sm:p-12 lg:p-14" aria-labelledby="welcome-title">
+        <div class="hero-orbit pointer-events-none absolute -right-32 -top-20 size-96 rounded-full" aria-hidden="true"></div>
+        <div class="relative max-w-2xl">
+            <p class="hero-eyebrow mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]">
+                <span class="size-2 rounded-full bg-[#88e5c7]" aria-hidden="true"></span> Welcome to DevSync
+            </p>
+            <h1 id="welcome-title" class="max-w-xl text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">@Model.Heading</h1>
+            <p class="hero-copy mt-6 max-w-lg text-base leading-8 sm:text-lg">@Model.Description</p>
+            <a href="/blogs" class="hero-action mt-8">
+                Explore technical blogs <span aria-hidden="true">→</span>
+            </a>
+        </div>
+        <div class="hero-copy relative mt-10 border-t border-white/15 pt-5 text-sm">Build thoughtfully. Learn continuously. Share openly.</div>
+    </section>
+
+    @if (Model.Drafts is not null)
+    {
+        <section class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-100 bg-brand-50 p-6"><div><h2 class="font-semibold">Your writing workspace</h2><p class="mt-2 text-sm text-slate-500">@Model.Drafts private drafts · @Model.Published published articles</p></div><a href="/blogs/mine" class="text-sm font-semibold text-brand-600">Continue writing →</a></section>
+    }
+    @if (Model.ActiveNotes is not null)
+    {
+        <section class="grid gap-5 sm:grid-cols-2" aria-label="Your learning workspace">
+            <a href="/notes" class="rounded-2xl border border-slate-200 bg-white p-6 transition hover:border-brand-500"><p class="text-sm text-slate-500">Your study notes</p><p class="mt-3 text-3xl font-semibold" data-learning-count="notes">@Model.ActiveNotes</p><p class="mt-3 text-sm text-brand-600">Open your notebooks →</p></a>
+            <a href="/revision" class="rounded-2xl border border-brand-100 bg-brand-50 p-6 transition hover:border-brand-500"><p class="text-sm text-slate-500">Ready to revise</p><p class="mt-3 text-3xl font-semibold" data-learning-count="due">@Model.DueReviews</p><p class="mt-3 text-sm text-brand-600">Start a review →</p></a>
+        </section>
+    }
+    @if (Model.OpenTasks is not null)
+    {
+        <section class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6" aria-label="Your task workspace"><div><h2 class="font-semibold">Keep your next steps moving</h2><p class="mt-2 text-sm text-slate-500"><span data-task-count="open">@Model.OpenTasks</span> open tasks · <span data-task-count="overdue">@Model.OverdueTasks</span> overdue</p></div><a href="/tasks/board" class="text-sm font-semibold text-brand-600">Open Kanban board →</a></section>
+    }
+    <section aria-labelledby="latest-title">
+        <div class="mb-5 flex justify-between gap-3"><h2 id="latest-title" class="text-2xl font-semibold">Fresh from the community</h2><a href="/blogs" class="text-sm text-brand-600">Explore all →</a></div>
+        @if (Model.Articles.Count == 0) { <div class="rounded-2xl border border-slate-200 bg-white p-7 text-sm leading-7 text-slate-500">No articles have been published yet. <a href="/blogs/mine" class="text-brand-600">Share the first idea →</a></div> }
+        else { <div class="grid gap-5 md:grid-cols-3">@foreach (var article in Model.Articles) { <partial name="_ArticleCard" model="article" /> }</div> }
+    </section>
+    <section id="workspace" class="scroll-mt-24" aria-labelledby="workspace-title">
+        <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">One connected workspace</p>
+                <h2 id="workspace-title" class="text-2xl font-semibold tracking-tight text-ink">From curiosity to creation</h2>
+            </div>
+            <span class="rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">Early preview</span>
+        </div>
+        <div class="grid gap-5 md:grid-cols-3">
+            @foreach (var area in Model.Areas)
+            {
+                <article class="rounded-2xl border border-slate-200/70 bg-white p-6 sm:p-7">
+                    <span class="flex size-10 items-center justify-center rounded-xl bg-brand-50 font-mono text-sm font-medium text-brand-600">@area.Number</span>
+                    <p class="mb-3 mt-7 text-xs font-semibold uppercase tracking-wider text-brand-600">@area.Label</p>
+                    <h3 class="text-xl font-semibold tracking-tight text-ink">@area.Title</h3>
+                    <p class="mt-3 text-sm leading-7 text-slate-500">@area.Description</p>
+                    @if (area.Url is not null) { <a href="@area.Url" class="mt-5 inline-block text-sm font-semibold text-brand-600">Open workspace →</a> }
+                </article>
+            }
+        </div>
+        <p class="mt-5 text-sm leading-6 text-slate-500">Explore technical blogs, organize your study notes, review what you've learned, and track your tasks. Collaborate in your private team workspaces.</p>
+    </section>
+</div>

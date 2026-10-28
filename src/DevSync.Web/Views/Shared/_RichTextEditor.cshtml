@@ -1,0 +1,9 @@
+@model DevSync.Web.Common.Content.RichTextEditorModel
+<div data-rich-text data-readonly="@Model.ReadOnly.ToString().ToLowerInvariant()" class="rich-editor">
+    <div data-rich-toolbar hidden class="rich-toolbar" role="toolbar" aria-label="Rich text formatting"></div>
+    <div data-rich-url hidden class="rich-url-panel"></div>
+    <div data-rich-surface hidden class="rich-surface"></div>
+    <label for="@Model.Id" data-for-field="Content" data-rich-source-label class="form-label">Rich text document (JSON source)</label>
+    <textarea id="@Model.Id" name="@Model.Name" data-rich-source data-field="Content" class="form-input min-h-48 font-mono" rows="8" maxlength="@Model.MaxLength" readonly="@Model.ReadOnly" spellcheck="false">@Model.Value</textarea>
+    <div class="rich-footer"><p data-rich-status class="text-xs text-slate-500" role="status" aria-live="polite">The visual editor loads with JavaScript. Source is saved as a structured document.</p><button type="button" data-rich-toggle hidden class="text-xs font-semibold text-brand-700">Show source</button></div>
+</div>

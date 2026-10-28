@@ -1,0 +1,49 @@
+@model DevSync.Web.Features.Images.Library
+@{ ViewData["Title"] = Model.Title; }
+<div class="mx-auto max-w-6xl space-y-6">
+    <header>
+        @if(Model.TeamId is not null) { <a href="/teams/@Model.TeamId" class="text-sm text-brand-600">← Team workspace</a> }
+        <p class="mt-4 text-xs font-semibold uppercase tracking-widest text-brand-600">Image library</p>
+        <h1 class="mt-3 text-3xl font-semibold break-words">@Model.Title</h1>
+        <p class="mt-3 text-sm leading-7 text-slate-500">Upload, view, and reuse your images in Markdown. @(Model.TeamId is null ? "Private images are visible only to you." : "Private images are visible only to current team members.") Enable a public link when an image needs to appear in a public blog.</p>
+    </header>
+    @if(TempData["Success"] is string success) { <p class="rounded-xl bg-brand-50 p-4 text-sm text-brand-700" role="status">@success</p> }
+    <partial name="_ValidationSummary" />
+    @if(Model.CanUpload) {
+        <form action="@Model.Path/upload" method="post" enctype="multipart/form-data" class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
+            @Html.AntiForgeryToken()
+            <h2 class="font-semibold">Upload an image</h2>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div><label for="image" class="form-label">Image file</label><input id="image" name="image" type="file" accept="image/png,image/jpeg" required class="form-input" aria-describedby="image-limits" /></div>
+                <div><label for="description" class="form-label">Image description</label><input id="description" name="description" required maxlength="160" class="form-input" placeholder="Describe what the image shows" /></div>
+            </div>
+            <p id="image-limits" class="text-xs leading-6 text-slate-500">PNG (non-interlaced) or JPEG · up to 5 MB and 20 million pixels · @Model.Total of 100 images. New uploads are always private.</p>
+            <button class="form-button">Upload image</button>
+        </form>
+    } else { <p class="rounded-xl bg-brand-50 p-4 text-sm text-brand-700">You can view and copy team images. A team writer can upload; an owner or admin can enable public links.</p> }
+    <div id="image-copy-status" role="status" aria-live="polite" class="text-sm text-brand-700"></div>
+    @if(Model.Images.Length==0) { <div class="rounded-2xl border border-dashed border-slate-300 p-10 text-center"><h2 class="font-semibold">Your images belong here</h2><p class="mt-3 text-sm text-slate-500">Upload a diagram, screenshot, or photo, then copy its Markdown into your article.</p></div> }
+    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        @foreach(var image in Model.Images) {
+            var source=$"/media/images/{image.Id}";
+            var markdown=$"![{image.Description.Replace("[","(").Replace("]",")").Replace("\r"," ").Replace("\n"," ")}]({source})";
+            <article class="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <a href="@source" target="_blank" rel="noopener" class="block bg-slate-50"><img src="@source" alt="@image.Description" loading="lazy" decoding="async" class="h-48 w-full object-contain p-3" /></a>
+                <div class="space-y-4 p-5">
+                    <div><h2 class="break-words font-semibold">@image.Description</h2><p class="mt-2 break-words text-xs text-slate-500">@image.Name · @image.Width × @image.Height</p><p class="mt-2 text-xs font-semibold text-brand-700">@(image.IsPublic ? "Public link enabled" : Model.TeamId is null ? "Private · Only you" : "Private · Team members")</p></div>
+                    <div><label for="url-@image.Id" class="form-label">Image URL</label><input id="url-@image.Id" class="form-input text-xs" readonly value="@(Model.BaseUrl+source)" /><button type="button" data-image-copy="url-@image.Id" class="mt-2 text-sm font-semibold text-brand-600" aria-label="Copy image URL for @image.Description">Copy URL</button></div>
+                    <div><label for="markdown-@image.Id" class="form-label">Markdown</label><input id="markdown-@image.Id" class="form-input text-xs" readonly value="@markdown" /><button type="button" data-image-copy="markdown-@image.Id" class="mt-2 text-sm font-semibold text-brand-600" aria-label="Copy Markdown for @image.Description">Copy Markdown</button></div>
+                    @if(Model.CanManage) {
+                        <form action="@Model.Path/@image.Id/visibility" method="post" class="border-t border-slate-100 pt-4">
+                            @Html.AntiForgeryToken()<input type="hidden" name="version" value="@image.Version" /><input type="hidden" name="isPublic" value="@((!image.IsPublic).ToString().ToLowerInvariant())" />
+                            <p class="mb-3 text-xs leading-6 text-slate-500">@(image.IsPublic ? "Disable the link to require library access again. Copies already downloaded cannot be recalled." : "Enabling a public link lets anyone with the URL view this image, including readers of public blogs.")</p>
+                            <button class="text-sm font-semibold text-brand-600">@(image.IsPublic ? "Disable public link" : "Enable public link")</button>
+                        </form>
+                    }
+                </div>
+            </article>
+        }
+    </div>
+    <nav aria-label="Image library pages" class="flex flex-wrap justify-between gap-4 text-sm text-slate-500"><span>Page @Model.Page of @Model.Pages</span><div class="flex gap-5">@if(Model.Page>1) { <a href="@Model.Path?page=@(Model.Page-1)" class="text-brand-600">Previous</a> } @if(Model.Page<Model.Pages) { <a href="@Model.Path?page=@(Model.Page+1)" class="text-brand-600">Next</a> }</div></nav>
+</div>
+@section Scripts { <script src="~/js/image-library.js" asp-append-version="true" defer></script> }

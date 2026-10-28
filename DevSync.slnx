@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DevSync.Domain/DevSync.Domain.csproj" />
+    <Project Path="src/DevSync.Infrastructure/DevSync.Infrastructure.csproj" />
+    <Project Path="src/DevSync.Web/DevSync.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DevSync.Tests/DevSync.Tests.csproj" />
+  </Folder>
+</Solution>

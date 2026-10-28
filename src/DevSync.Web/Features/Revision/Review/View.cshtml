@@ -1,0 +1,37 @@
+@model DevSync.Web.Features.Revision.Review.ViewModel
+@{ ViewData["Title"] = "Review card"; }
+<div class="mx-auto max-w-3xl space-y-8">
+    <header><a class="text-sm font-medium text-brand-600" href="/revision">← Revision workspace</a><p class="mb-2 mt-7 text-xs font-semibold uppercase tracking-widest text-brand-600">A moment to recall</p><h1 class="text-3xl font-semibold tracking-tight">@(Model.CanReview ? "Ready for review" : "Review scheduled")</h1><p class="mt-3 break-words text-sm text-slate-500">From <a class="font-medium text-brand-600" href="/notes/@Model.NoteId">@Model.NoteTitle</a> · @(Model.CanReview ? "Due" : "Next review") @Model.DueAt.ToString("MMM d, yyyy HH:mm 'UTC'")</p></header>
+    @if (TempData["Success"] is string success) { <p class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800" role="status">@success</p> }
+    <partial name="_ValidationSummary" />
+    <section class="rounded-3xl border border-brand-100 bg-white p-6 sm:p-9" aria-labelledby="card-prompt">
+        <p class="text-xs font-medium uppercase tracking-widest text-slate-600">Question</p><h2 id="card-prompt" class="mt-5 whitespace-pre-wrap break-words text-2xl font-medium leading-relaxed">@Model.Prompt</h2>
+        <details class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <summary class="cursor-pointer text-sm font-semibold text-brand-600">Reveal answer</summary>
+            <p class="mt-5 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">@Model.Answer</p>
+            @if (Model.CanReview)
+            {
+                <form method="post" action="/revision/@Model.Id/review" class="mt-7 border-t border-slate-200 pt-6">
+                    @Html.AntiForgeryToken()<input asp-for="Version" type="hidden" /><input asp-for="SubmissionId" type="hidden" />
+                    <p class="mb-4 text-sm font-medium text-slate-700">How well did you recall the answer?</p>
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        @foreach (var choice in Model.Choices)
+                        { <button type="submit" name="Grade" value="@choice.Value" class="rounded-xl border border-brand-100 bg-white p-4 text-center transition hover:border-brand-400 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><span class="block text-sm font-semibold text-brand-700">@choice.Label</span><span class="mt-1 block text-xs text-slate-500">@choice.NextReview</span></button> }
+                    </div>
+                </form>
+            }
+            else { <p class="mt-6 text-sm text-slate-500">Your answer stays available. You can record another review when this card is due.</p> }
+        </details>
+        <p class="mt-6 text-xs text-slate-500">@Model.ReviewCount reviews · @Model.LapseCount Again grades · All review times are UTC.</p>
+    </section>
+    <section class="rounded-2xl border border-slate-200 bg-white p-6" aria-labelledby="history-heading">
+        <h2 id="history-heading" class="text-xl font-semibold">Review history</h2>
+        @if (Model.History.Count == 0) { <p class="mt-4 text-sm text-slate-500">Your first review will appear here.</p> }
+        <ol class="mt-5 divide-y divide-slate-100">
+            @foreach (var item in Model.History)
+            { <li class="flex flex-wrap justify-between gap-3 py-4 text-sm"><div><span class="font-semibold text-brand-700">@item.Grade</span><p class="mt-1 text-xs text-slate-500">@item.ReviewedAt.ToString("MMM d, yyyy HH:mm 'UTC'")</p></div><p class="text-xs text-slate-500">Next: @item.NextDueAt.ToString("MMM d, yyyy HH:mm 'UTC'")</p></li> }
+        </ol>
+        @if (Model.HistoryPages > 1)
+        { <nav class="mt-5 flex justify-between gap-3 text-sm text-brand-600" aria-label="Card review history pages">@if (Model.HistoryPage > 1) { <a href="/revision/@Model.Id?historyPage=@(Model.HistoryPage - 1)">← Previous</a> }<span class="text-slate-500">Page @Model.HistoryPage of @Model.HistoryPages</span>@if (Model.HistoryPage < Model.HistoryPages) { <a href="/revision/@Model.Id?historyPage=@(Model.HistoryPage + 1)">Next →</a> }</nav> }
+    </section>
+</div>

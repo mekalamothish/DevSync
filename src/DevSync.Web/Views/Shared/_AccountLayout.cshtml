@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>@ViewData["Title"] · DevSync</title>
+    <script src="~/js/theme.js" asp-append-version="true"></script>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="min-h-screen bg-canvas font-sans text-ink antialiased">
+    <a href="#main-content" class="sr-only z-50 bg-white p-3 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
+    <header class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-6 py-7 sm:px-10">
+        <a href="/" class="flex items-center gap-3 text-xl font-semibold tracking-tight" aria-label="DevSync home">
+            <img src="~/favicon.svg" class="size-9" alt="" />DevSync<span class="-ml-3 text-brand-600">.</span>
+        </a>
+        <div class="flex items-center gap-3"><a href="/" class="text-sm text-slate-500 hover:text-brand-600"><span class="min-[380px]:hidden">Hub</span><span class="hidden min-[380px]:inline">Back to hub</span> <span aria-hidden="true">↗</span></a><partial name="_ThemeToggle" /></div>
+    </header>
+    <main id="main-content" tabindex="-1" class="mx-auto grid max-w-6xl gap-12 px-6 pb-12 pt-5 lg:grid-cols-2 lg:items-center lg:px-10 lg:pt-12">
+        <section class="account-story hidden max-w-lg lg:block" aria-label="About DevSync">
+            <p class="story-accent mb-6 text-xs font-semibold uppercase tracking-[0.2em]">Your developer knowledge platform</p>
+            <h2 class="text-5xl font-semibold leading-tight tracking-tight">Keep your ideas.<br /><span class="story-accent">Grow your craft.</span></h2>
+            <p class="story-copy mt-6 max-w-md text-lg leading-8">A thoughtful space for technical writing, study notes, and the work you do together.</p>
+            <div class="story-copy mt-10 space-y-5 border-t border-white/15 pt-8 text-sm">
+                <p><span class="story-accent mr-3" aria-hidden="true">✓</span> Share the details that make a difference</p>
+                <p><span class="story-accent mr-3" aria-hidden="true">✓</span> Build a lasting library of knowledge</p>
+                <p><span class="story-accent mr-3" aria-hidden="true">✓</span> Bring your learning and your work together</p>
+            </div>
+        </section>
+        <div class="account-card mx-auto w-full max-w-md rounded-3xl border border-slate-200/70 bg-white p-7 sm:p-9">
+            @RenderBody()
+        </div>
+    </main>
+    <footer class="px-6 py-6 text-center text-xs text-slate-600">DevSync · Made for developers who keep learning.</footer>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

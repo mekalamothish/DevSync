@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <UserSecretsId>devsync-development</UserSecretsId>
+    <DefaultItemExcludes>$(DefaultItemExcludes);.local/**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.20.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.20.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0" />
+    <ProjectReference Include="../DevSync.Domain/DevSync.Domain.csproj" />
+    <ProjectReference Include="../DevSync.Infrastructure/DevSync.Infrastructure.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <Target Name="RequireCodeEditor" BeforeTargets="ComputeFilesToPublish" Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/vendor/code/note-code.js') Or !Exists('$(MSBuildProjectDirectory)/wwwroot/vendor/code/rich-text.js')">
+    <Error Text="Code editor assets are missing. Run npm ci and npm run css:build before publishing." />
+  </Target>
+  <Target Name="RequireTailwindCss" BeforeTargets="ComputeFilesToPublish" Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/css/site.css')">
+    <Error Text="Tailwind CSS is missing. Run npm ci and npm run css:build before publishing." />
+  </Target>
+</Project>

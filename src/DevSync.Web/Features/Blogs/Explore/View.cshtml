@@ -1,0 +1,43 @@
+@model DevSync.Web.Features.Blogs.Explore.ViewModel
+@{
+    ViewData["Title"] = Model.Bookmarks ? "Saved articles" : "Explore technical blogs";
+    var path = Model.Bookmarks ? "/blogs/bookmarks" : "/blogs";
+}
+<div class="mx-auto max-w-6xl space-y-8">
+    <header class="flex flex-wrap items-end justify-between gap-5">
+        <div><p class="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-600">The developer community</p>
+            <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">@(Model.Bookmarks ? "Your reading list" : "Explore technical blogs")</h1>
+            <p class="mt-3 text-sm leading-7 text-slate-500">@(Model.Bookmarks ? "Keep good ideas close. Pick up where your curiosity left off." : "Ideas, discoveries, and practical lessons from developers.")</p></div>
+        <a href="/blogs/mine" class="form-button">Write an article <span class="ml-3" aria-hidden="true">＋</span></a>
+    </header>
+    @if (!Model.Bookmarks)
+    {
+        <form method="get" action="/blogs" class="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-5">
+            <div class="min-w-48 flex-1"><label class="form-label" for="search">Search articles</label><input class="form-input" id="search" name="search" value="@Model.Search" placeholder="Search titles and summaries" maxlength="200" /></div>
+            <div><label class="form-label" for="tag">Tag</label><input class="form-input" id="tag" name="tag" value="@Model.Tag" placeholder="e.g. asp.net" maxlength="30" /></div>
+            <button class="form-button" type="submit">Search</button><a class="px-3 py-3 text-sm text-slate-500" href="/blogs">Clear</a>
+        </form>
+    }
+    <p class="text-sm text-slate-500">@Model.Total @(Model.Total == 1 ? "article" : "articles") · Page @Model.Page of @Model.Pages</p>
+    @if (Model.Articles.Count == 0)
+    {
+        <section class="rounded-3xl border border-dashed border-brand-100 bg-white px-6 py-16 text-center">
+            <span class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-2xl text-brand-600" aria-hidden="true">⌘</span>
+            <h2 class="mt-5 text-xl font-semibold">@(Model.Bookmarks ? "A place for ideas worth keeping" : "The next great article could be yours")</h2>
+            <p class="mx-auto mt-3 max-w-md text-sm leading-7 text-slate-500">@(Model.Bookmarks ? "Use Save article on a published article to add it here." : Model.Search.Length > 0 || Model.Tag.Length > 0 ? "No articles match these filters. Try a different search." : "Published articles will appear here. Start with something you learned, built, or solved.")</p>
+        </section>
+    }
+    else
+    {
+        <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            @foreach (var article in Model.Articles)
+            {
+                <partial name="_ArticleCard" model="article" />
+            }
+        </div>
+    }
+    <nav class="flex items-center justify-between text-sm" aria-label="Article pages">
+        @if (Model.Page > 1) { <a class="text-brand-700" href="@path?search=@Uri.EscapeDataString(Model.Search)&amp;tag=@Uri.EscapeDataString(Model.Tag)&amp;page=@(Model.Page - 1)">← Previous</a> }
+        @if (Model.Page < Model.Pages) { <a class="ml-auto text-brand-700" href="@path?search=@Uri.EscapeDataString(Model.Search)&amp;tag=@Uri.EscapeDataString(Model.Tag)&amp;page=@(Model.Page + 1)">Next →</a> }
+    </nav>
+</div>
