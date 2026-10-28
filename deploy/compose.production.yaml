@@ -52,6 +52,12 @@ services:
   web:
     image: devsync-web:${DEVSYNC_IMAGE_TAG:-production}
     environment: *app-environment
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, --show-error, --header, "Host: ${PUBLIC_HOST}", "http://127.0.0.1:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
     volumes:
       - web-data:/app/.local
     depends_on:

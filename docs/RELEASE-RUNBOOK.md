@@ -1,6 +1,6 @@
 # Release preparation and recovery
 
-Status: local operational milestone, 8 October 2026. The application is running in local Development Docker. Production hosting, exact Figma parity, full accessibility/cross-browser review, representative load testing, and SMTP delivery verification remain release gates.
+Status: Oracle live test deployment completed 29 October 2026 at https://129.159.235.143/ . See `deploy/README.md` for the actual topology, certificate renewal and update commands. Local Development Docker is also retained. Signed-in acceptance tests, actual email delivery, OS modernization, off-server backup planning, full accessibility/cross-browser review and representative load testing remain broader release work.
 
 ## Reproducible verification
 

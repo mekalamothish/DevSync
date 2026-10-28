@@ -1,0 +1,8 @@
+[Unit]
+Description=Renew DevSync IP HTTPS certificate and reload Caddy
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/devsync/deploy/renew-host-certificates.sh

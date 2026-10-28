@@ -1,0 +1,16 @@
+
+# BEGIN DEVSYNC IP SITE
+http://129.159.235.143 {
+    handle /.well-known/acme-challenge/* {
+        root * /var/lib/devsync/acme
+        file_server
+    }
+    handle {
+        redir https://129.159.235.143{uri} permanent
+    }
+}
+https://129.159.235.143 {
+    tls /etc/devsync/tls/live/129.159.235.143/fullchain.pem /etc/devsync/tls/live/129.159.235.143/privkey.pem
+    reverse_proxy 127.0.0.1:5180
+}
+# END DEVSYNC IP SITE

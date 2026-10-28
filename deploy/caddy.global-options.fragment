@@ -1,0 +1,5 @@
+# Merge into the single global block at the very beginning of /etc/caddy/Caddyfile.
+# IP clients omit SNI; this selects their certificate without affecting named sites.
+{
+    default_sni 129.159.235.143
+}

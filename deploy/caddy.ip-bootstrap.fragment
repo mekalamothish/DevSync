@@ -1,0 +1,12 @@
+
+# BEGIN DEVSYNC IP SITE
+http://129.159.235.143 {
+    handle /.well-known/acme-challenge/* {
+        root * /var/lib/devsync/acme
+        file_server
+    }
+    handle {
+        respond "DevSync deployment in progress" 503
+    }
+}
+# END DEVSYNC IP SITE
