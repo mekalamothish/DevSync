@@ -24,3 +24,5 @@ src/DevSync.Web/wwwroot/vendor/code/
 *.ppk
 id_rsa*
 id_ed25519*
+
+DeploymentKeys/

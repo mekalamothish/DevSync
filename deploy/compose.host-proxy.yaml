@@ -1,0 +1,14 @@
+# Use an existing host reverse proxy instead of starting containerized Nginx.
+# Host Caddy must forward to 127.0.0.1:5180 and replace forwarded headers.
+services:
+  web:
+    ports:
+      - "127.0.0.1:5180:8080"
+    environment:
+      ReverseProxy__KnownProxies__0: 172.30.82.1
+  proxy:
+    profiles: [container-proxy]
+  certificate:
+    volumes:
+      - /etc/devsync/tls:/etc/letsencrypt
+      - /var/lib/devsync/acme:/var/www/acme

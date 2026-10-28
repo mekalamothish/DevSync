@@ -1,0 +1,13 @@
+# Used only to serve ACME challenges before the first certificate exists.
+name: devsync-production
+services:
+  bootstrap:
+    image: nginx:1.28-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.bootstrap.conf:/etc/nginx/conf.d/default.conf:ro
+      - acme-webroot:/var/www/acme:ro
+    restart: unless-stopped
+volumes:
+  acme-webroot:

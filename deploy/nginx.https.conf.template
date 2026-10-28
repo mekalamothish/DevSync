@@ -1,0 +1,21 @@
+server {
+    listen 80;
+    server_name ${PUBLIC_HOST};
+    location /.well-known/acme-challenge/ { root /var/www/acme; }
+    location / { return 301 https://${PUBLIC_HOST}$request_uri; }
+}
+server {
+    listen 443 ssl;
+    server_name ${PUBLIC_HOST};
+    ssl_certificate /etc/letsencrypt/live/${PUBLIC_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${PUBLIC_HOST}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    client_max_body_size 12m;
+    location / {
+        proxy_pass http://web:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
