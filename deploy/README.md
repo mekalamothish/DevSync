@@ -43,7 +43,7 @@ For this variant, Certbot stores certificates under `/etc/devsync/tls` on the ho
 - Environment is protected at `/opt/devsync/deploy/.env` (0600); application data and keys are in `devsync-production_web-data`, PostgreSQL in `devsync-production_postgres-data`. Do not remove these volumes.
 - Trusted Let's Encrypt IP certificate was issued after staging validation. Certificate files are under `/etc/devsync/tls`, readable by root and the caddy group. `devsync-cert-renew.timer` runs twice daily; its service was tested successfully. IP certificate renewal must remain enabled. Never load the separate staging certificate into live Caddy.
 - Production Docker health probes send the configured Host header to satisfy AllowedHosts validation. The public readiness endpoint returned Healthy. Anonymous home, sign-in and registration pages loaded over trusted HTTPS. SMTP TLS/authentication succeeded; no email was sent during validation. Actual verification/invitation delivery and signed-in user workflows still need live user acceptance testing.
-- Server build: zero warnings/errors, 77 application and 40 client tests passed. These are not a claim that PostgreSQL integration tests were rerun on the live database. Existing domain still responds after Caddy reload.
+- Latest server build: zero warnings/errors, 79 application tests passed; the final registration feedback update has 48 client tests. Local isolated PostgreSQL regressions passed all 54 tests. These are not a claim that PostgreSQL integration tests were rerun on the live database. Existing domain still responds after Caddy reload.
 - Host is Ubuntu 20.04 ARM64, Docker 28.1.1 / Compose 2.35.1 from the official Focal packages. Upgrade the host to a currently supported Ubuntu release in a separate maintenance window before broader production use; no OS upgrade was attempted alongside deployment.
 
 Update commands (after backing up PostgreSQL and the web-data volume):
@@ -63,3 +63,5 @@ sudo docker compose --env-file .env -f compose.production.yaml -f compose.host-p
 sudo systemctl status devsync-cert-renew.timer
 curl --fail https://129.159.235.143/health/ready
 ```
+
+The 29 October cover-image rollout applied migration 12 after a root-only database/key-volume backup at `/var/backups/devsync/before-covers-20261029T075931Z`. The previous application image is retained as `devsync-web:before-covers-20261029`. Existing published Markdown now renders with the improved parser without modifying its stored body.
