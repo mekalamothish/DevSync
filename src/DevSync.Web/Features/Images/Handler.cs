@@ -10,7 +10,7 @@ public sealed record Library(Guid? TeamId, string Title, bool CanUpload, bool Ca
 {
     public string Path => TeamId is null ? "/images" : $"/teams/{TeamId}/images";
 }
-public sealed record Result(int Status, string? Error = null);
+public sealed record Result(int Status, string? Error = null, Guid? ImageId = null);
 
 public sealed class Handler(AppDbContext db, IConfiguration config, TimeProvider clock)
 {
@@ -72,9 +72,10 @@ public sealed class Handler(AppDbContext db, IConfiguration config, TimeProvider
             return new(422,"This library has reached its 100-image limit.");
         var name=Path.GetFileName(file.FileName.Replace('\\','/'));
         if(string.IsNullOrWhiteSpace(name)) name="Image";
-        db.ImageAssets.Add(new ImageAsset {OwnerId=teamId==null ? actor : null,TeamId=teamId,Name=name[..Math.Min(200,name.Length)],
-            Description=description,Data=data,ContentType=format.ContentType,Width=format.Width,Height=format.Height,CreatedAt=clock.GetUtcNow().ToUniversalTime()});
-        await db.SaveChangesAsync(ct); await tx.CommitAsync(ct); return new(200);
+        var image = new ImageAsset {OwnerId=teamId==null ? actor : null,TeamId=teamId,Name=name[..Math.Min(200,name.Length)],
+            Description=description,Data=data,ContentType=format.ContentType,Width=format.Width,Height=format.Height,CreatedAt=clock.GetUtcNow().ToUniversalTime()};
+        db.ImageAssets.Add(image);
+        await db.SaveChangesAsync(ct); await tx.CommitAsync(ct); return new(200, ImageId: image.Id);
     }
     public async Task<Result> Visibility(Guid actor, Guid? teamId, Guid id, Guid version, bool isPublic, CancellationToken ct)
     {

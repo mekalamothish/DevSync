@@ -277,6 +277,36 @@ public sealed class AccountFlowTests(AccountFixture fixture) : IClassFixture<Acc
     }
 
     [Fact]
+    public async Task Corrected_password_can_reuse_details_and_pending_registration_retry_is_idempotent()
+    {
+        using var client=fixture.Client();
+        var fields=new Dictionary<string,string> { ["DisplayName"]="Retry Registration", ["Handle"]="retry_"+fixture.RunId,
+            ["Email"]=fixture.Email("retry"), ["Password"]="lowercasepasswordonly", ["ConfirmPassword"]="lowercasepasswordonly" };
+        var invalid=await FormAsync(client,"/account/register","/account/register",fields);
+        Assert.Equal(HttpStatusCode.OK,invalid.StatusCode);
+        using(var scope=fixture.Factory.Services.CreateScope())
+        {
+            var db=scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.False(await db.Users.AnyAsync(u=>u.Email==fixture.Email("retry")));
+            Assert.False(await db.DeveloperProfiles.AnyAsync(p=>p.Handle=="retry_"+fixture.RunId));
+        }
+        fields["Password"]=Password;fields["ConfirmPassword"]=Password;
+        var success=await FormAsync(client,"/account/register","/account/register",fields);
+        Assert.Equal(HttpStatusCode.Redirect,success.StatusCode);
+        Assert.Contains("check-email",success.Headers.Location!.OriginalString);
+        var repeated=await FormAsync(client,"/account/register","/account/register",fields);
+        Assert.Equal(HttpStatusCode.Redirect,repeated.StatusCode);
+        using(var scope=fixture.Factory.Services.CreateScope())
+        {
+            var db=scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.Equal(1,await db.Users.CountAsync(u=>u.Email==fixture.Email("retry")));
+            Assert.Equal(1,await db.DeveloperProfiles.CountAsync(p=>p.Handle=="retry_"+fixture.RunId));
+        }
+        fields["Password"]="Different-ValidPassword42!";fields["ConfirmPassword"]=fields["Password"];
+        Assert.Equal(HttpStatusCode.OK,(await FormAsync(client,"/account/register","/account/register",fields)).StatusCode);
+    }
+
+    [Fact]
     public async Task Duplicate_normalized_email_and_invalid_confirmation_are_rejected()
     {
         using var client = fixture.Client();

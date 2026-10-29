@@ -11,6 +11,7 @@ public sealed class Command
     [Required, EmailAddress, StringLength(254)]
     public string Email { get; set; } = "";
     [Required, StringLength(128, MinimumLength = 12), DataType(DataType.Password)]
+    [RegularExpression(@"(?s)^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).+$", ErrorMessage = "Use uppercase and lowercase letters, a number, and a symbol in your password.")]
     public string Password { get; set; } = "";
     [Required, Compare(nameof(Password)), DataType(DataType.Password), Display(Name = "Confirm password")]
     public string ConfirmPassword { get; set; } = "";

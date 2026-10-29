@@ -22,6 +22,7 @@ public sealed class Command
 {
     public Guid Id { get; set; }
     public Guid Version { get; set; }
+    public Guid? CoverImageId { get; set; }
     [Required, StringLength(160)]
     public string Title { get; set; } = "";
     public Guid? NotebookId { get; set; }

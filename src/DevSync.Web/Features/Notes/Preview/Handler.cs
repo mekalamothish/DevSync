@@ -5,7 +5,7 @@ namespace DevSync.Web.Features.Notes.Preview;
 
 public sealed record Block(Guid Id, string Kind, string Content, string? Language, string? ArticleTitle, string? ArticleUrl, bool IsDraft);
 public sealed record ViewModel(Guid Id, string Title, string? NotebookName, string[] Tags,
-    IReadOnlyList<Block> Blocks, bool IsArchived, DateTimeOffset UpdatedAt);
+    IReadOnlyList<Block> Blocks, bool IsArchived, DateTimeOffset UpdatedAt, Guid? CoverImageId = null);
 
 public sealed class Handler(AppDbContext db)
 {
@@ -26,6 +26,6 @@ public sealed class Handler(AppDbContext db)
             var isDraft = post?.AuthorId == ownerId;
             var url = post is null ? null : isDraft ? $"/blogs/{post.Id}/preview" : "/blogs/" + post.Slug;
             return new Block(b.Id, b.Kind, b.Content, b.Language, post?.Title, url, isDraft);
-        }).ToList(), note.IsArchived, note.UpdatedAt);
+        }).ToList(), note.IsArchived, note.UpdatedAt, note.CoverImageId);
     }
 }

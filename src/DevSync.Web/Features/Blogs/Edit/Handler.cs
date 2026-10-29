@@ -15,7 +15,7 @@ public sealed class Handler(AppDbContext db, DevSync.Web.Features.Notes.Edit.Han
     public async Task<Command?> LoadAsync(Guid id, Guid userId, CancellationToken ct)
     {
         var command=await db.BlogPosts.AsNoTracking().Where(p => p.Id == id && p.AuthorId == userId)
-            .Select(p => new Command { Id = p.Id, Version = p.Version, Title = p.Title, Summary = p.Summary,
+            .Select(p => new Command { Id = p.Id, Version = p.Version, Title = p.Title, CoverImageId = p.CoverImageId, Summary = p.Summary,
                 Markdown = p.Markdown, EditorFormat=p.EditorFormat,RichText=p.RichText,
                 Blocks=BlogDocument.ReadBlocks(p.BlocksJson), Tags = p.DraftTags, IsHidden = p.IsHidden, PublishedUrl = p.Slug == null || p.IsHidden ? null : "/blogs/" + p.Slug })
             .SingleOrDefaultAsync(ct);
@@ -61,6 +61,8 @@ public sealed class Handler(AppDbContext db, DevSync.Web.Features.Notes.Edit.Han
         var permitted=await db.BlogPosts.Where(p=>linked.Contains(p.Id) && (p.AuthorId==userId || p.PublishedAt!=null && !p.IsHidden)).Select(p=>p.Id).ToArrayAsync(ct);
         if(linked.Except(permitted).Any() || command.Blocks.Any(b=>b.Kind=="article" && b.LinkedPostId==null && b.Id!=placeholder))
             return new(422,"Link a published article or one of your own drafts.",post.Version,url);
+        if(command.CoverImageId is not null && !await db.ImageAssets.AnyAsync(image=>image.Id==command.CoverImageId && image.OwnerId==userId,ct))
+            return new(422,"Choose a cover from your personal image library or upload a new image.",post.Version,url);
         var tags = (command.Tags ?? "").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .Select(t => t.ToLowerInvariant()).Distinct().Order().ToArray();
         if (tags.Length > 5 || tags.Any(t => !Regex.IsMatch(t, "^[a-z0-9][a-z0-9+#.-]{0,29}$")))
@@ -73,6 +75,7 @@ public sealed class Handler(AppDbContext db, DevSync.Web.Features.Notes.Edit.Han
         };
         if (publish && (!hasContent || string.IsNullOrWhiteSpace(command.Summary)))
             return new(422, "Add an article and a short summary before publishing.", post.Version, url);
+        post.CoverImageId = command.CoverImageId;
         post.Title = command.Title.Trim();
         post.Summary = command.Summary?.Trim() ?? "";
         post.Markdown = command.Markdown ?? "";
@@ -88,6 +91,7 @@ public sealed class Handler(AppDbContext db, DevSync.Web.Features.Notes.Edit.Han
                 stem = stem.Length == 0 ? "article" : stem[..Math.Min(stem.Length, 100)].TrimEnd('-');
                 post.Slug = stem + "-" + post.Id.ToString("N");
             }
+            post.PublishedCoverImageId = post.CoverImageId;
             post.PublishedTitle = post.Title;
             post.PublishedSummary = post.Summary;
             post.PublishedMarkdown = post.EditorFormat=="markdown" ? post.Markdown : "";

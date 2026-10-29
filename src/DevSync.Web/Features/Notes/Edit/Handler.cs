@@ -20,7 +20,7 @@ public sealed class Handler(AppDbContext db)
         if (note is null) return null;
         var command = new Command
         {
-            Id = note.Id, Version = note.Version, Title = note.Title, NotebookId = note.NotebookId,
+            Id = note.Id, Version = note.Version, Title = note.Title, NotebookId = note.NotebookId, CoverImageId = note.CoverImageId,
             Tags = string.Join(',', await db.StudyNoteTags.AsNoTracking().Where(t => t.NoteId == id).OrderBy(t => t.Name).Select(t => t.Name).ToListAsync(ct)),
             Blocks = await db.StudyNoteBlocks.AsNoTracking().Where(b => b.NoteId == id).OrderBy(b => b.Position).ThenBy(b => b.Id)
                 .Select(b => new BlockCommand { Id = b.Id, Kind = b.Kind, Content = b.Content, Language = b.Language, LinkedPostId = b.LinkedPostId }).ToListAsync(ct),
@@ -130,6 +130,9 @@ public sealed class Handler(AppDbContext db)
         var allowedLinks = await db.BlogPosts.AsNoTracking().Where(p => linkedIds.Contains(p.Id) && (p.AuthorId == ownerId || (p.PublishedAt != null && !p.IsHidden))).Select(p => p.Id).ToArrayAsync(ct);
         if (linkedIds.Except(allowedLinks).Any() || blocks.Any(b => b.Kind == "article" && b.LinkedPostId is null && b.Id != addedPlaceholder))
             return new(422, "Link a published article or one of your own drafts.", note.Version);
+        if(command.CoverImageId is not null && !await db.ImageAssets.AnyAsync(image=>image.Id==command.CoverImageId && image.OwnerId==ownerId,ct))
+            return new(422,"Choose a cover from your personal image library or upload a new image.",note.Version);
+        note.CoverImageId = command.CoverImageId;
         note.Title = command.Title.Trim();
         note.NotebookId = command.NotebookId;
         note.UpdatedAt = DateTimeOffset.UtcNow;

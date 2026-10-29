@@ -14,6 +14,7 @@ public sealed class StudyNote
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid OwnerId { get; set; }
     public Guid? NotebookId { get; set; }
+    public Guid? CoverImageId { get; set; }
     public string Title { get; set; } = "Untitled note";
     public bool IsArchived { get; set; }
     public Guid Version { get; set; } = Guid.NewGuid();

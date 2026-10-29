@@ -7,7 +7,7 @@ namespace DevSync.Web.Features.Blogs.Read;
 public sealed record Comment(Guid Id, Guid UserId, string Author, string Body, DateTimeOffset Date);
 public sealed record ViewModel(Guid Id, Guid AuthorId, string Title, string Summary, string Html, string Author,
     string[] Tags, DateTimeOffset Date, string? Slug, bool Preview, bool Bookmarked, bool Reacted,
-    int Reactions, IReadOnlyList<Comment> Comments, int CommentPage, int CommentPages, int CommentCount, string? AuthorHandle = null, bool PublisherVerified = false);
+    int Reactions, IReadOnlyList<Comment> Comments, int CommentPage, int CommentPages, int CommentCount, string? AuthorHandle = null, bool PublisherVerified = false, Guid? CoverImageId = null);
 
 public sealed class Handler(AppDbContext db, IConfiguration config)
 {
@@ -22,7 +22,7 @@ public sealed class Handler(AppDbContext db, IConfiguration config)
         var post = row.Post;
         if (previewId is not null)
             return new(post.Id, post.AuthorId, post.Title, post.Summary, await BlogDocument.RenderAsync(db,post.EditorFormat,post.Markdown,post.BlocksJson,post.RichText,userId,config["Account:PublicBaseUrl"],ct), row.Author,
-                post.DraftTags.Split(',', StringSplitOptions.RemoveEmptyEntries), post.UpdatedAt, post.Slug, true, false, false, 0, [], 1, 1, 0);
+                post.DraftTags.Split(',', StringSplitOptions.RemoveEmptyEntries), post.UpdatedAt, post.Slug, true, false, false, 0, [], 1, 1, 0, CoverImageId:post.CoverImageId);
         var tags = await db.BlogTags.Where(t => t.PostId == post.Id).OrderBy(t => t.Name).Select(t => t.Name).ToArrayAsync(ct);
         var reactions = await db.BlogReactions.CountAsync(r => r.PostId == post.Id, ct);
         var bookmarked = userId is not null && await db.BlogBookmarks.AnyAsync(b => b.PostId == post.Id && b.UserId == userId, ct);
@@ -36,6 +36,6 @@ public sealed class Handler(AppDbContext db, IConfiguration config)
             select new Comment(c.Id, c.UserId, a.DisplayName, c.Body, c.CreatedAt))
             .Skip((commentPage - 1) * 20).Take(20).ToListAsync(ct);
         return new(post.Id, post.AuthorId, post.PublishedTitle!, post.PublishedSummary!, await BlogDocument.RenderAsync(db,post.PublishedEditorFormat,post.PublishedMarkdown!,post.PublishedBlocksJson,post.PublishedRichText,null,config["Account:PublicBaseUrl"],ct),
-            row.Author, tags, post.PublishedAt!.Value, post.Slug, false, bookmarked, reacted, reactions, items, commentPage, pages, total, row.PublicHandle, row.Verified);
+            row.Author, tags, post.PublishedAt!.Value, post.Slug, false, bookmarked, reacted, reactions, items, commentPage, pages, total, row.PublicHandle, row.Verified, post.PublishedCoverImageId);
     }
 }

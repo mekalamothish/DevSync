@@ -1,50 +1,71 @@
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
+using Markdig;
+using Markdig.Extensions.AutoIdentifiers;
+using Markdig.Renderers;
+using Markdig.Renderers.Html;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 
 namespace DevSync.Web.Features.Blogs.Common;
 
-// Deliberately small Markdown dialect. Every user-controlled fragment is encoded;
-// only this renderer emits HTML. Raw HTML is displayed as plain text.
 public static class ArticleRenderer
 {
+    private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
+        .UsePipeTables().UseTaskLists().UseEmphasisExtras()
+        .UseAutoIdentifiers(AutoIdentifierOptions.GitHub).DisableHtml().Build();
+
     public static string Render(string markdown, string? applicationOrigin = null)
     {
-        var html = new StringBuilder();
-        var code = new StringBuilder();
-        var fenced = false;
-        var list = false;
-        foreach (var line in markdown.Replace("\r\n", "\n").Split('\n'))
-        {
-            if (line.StartsWith("```", StringComparison.Ordinal))
-            {
-                if (list) { html.Append("</ul>"); list = false; }
-                if (fenced) { html.Append("<pre><code>").Append(WebUtility.HtmlEncode(code.ToString())).Append("</code></pre>"); code.Clear(); }
-                fenced = !fenced;
-                continue;
-            }
-            if (fenced) { code.AppendLine(line); continue; }
-            if (line.StartsWith("- ", StringComparison.Ordinal))
-            {
-                if (!list) { html.Append("<ul>"); list = true; }
-                html.Append("<li>").Append(Inline(line[2..], applicationOrigin)).Append("</li>");
-                continue;
-            }
-            if (list) { html.Append("</ul>"); list = false; }
-            if (string.IsNullOrWhiteSpace(line)) continue;
-            var heading = Regex.Match(line, "^(#{1,3}) (.+)$");
-            if (heading.Success)
-            {
-                var level = heading.Groups[1].Length + 1;
-                html.Append("<h").Append(level).Append('>').Append(Inline(heading.Groups[2].Value, applicationOrigin)).Append("</h").Append(level).Append('>');
-            }
-            else html.Append("<p>").Append(Inline(line, applicationOrigin)).Append("</p>");
-        }
-        if (list) html.Append("</ul>");
-        if (fenced) html.Append("<pre><code>").Append(WebUtility.HtmlEncode(code.ToString())).Append("</code></pre>");
-        return html.ToString();
+        var document = Markdown.Parse(markdown ?? "", Pipeline);
+        // The page already has its own H1. Preserve the existing article heading hierarchy.
+        foreach (var heading in document.Descendants<HeadingBlock>()) heading.Level = Math.Min(6, heading.Level + 1);
+        using var writer = new StringWriter();
+        var renderer = new HtmlRenderer(writer);
+        Pipeline.Setup(renderer);
+        renderer.ObjectRenderers.ReplaceOrAdd<Markdig.Renderers.Html.Inlines.LinkInlineRenderer>(new SafeLinkRenderer(applicationOrigin));
+        renderer.ObjectRenderers.ReplaceOrAdd<Markdig.Renderers.Html.Inlines.AutolinkInlineRenderer>(new SafeAutoLinkRenderer());
+        renderer.Render(document);
+        return writer.ToString();
     }
 
+    private static string? LinkSource(string? source)
+    {
+        if (string.IsNullOrEmpty(source) || source.Any(char.IsControl) || source.Contains('\\')) return null;
+        if (source.StartsWith('#') || source.StartsWith('/') && !source.StartsWith("//")) return source;
+        return Uri.TryCreate(source, UriKind.Absolute, out var uri) && uri.UserInfo.Length == 0 && uri.Scheme is "http" or "https" ? uri.AbsoluteUri : null;
+    }
+
+    private sealed class SafeLinkRenderer(string? origin) : HtmlObjectRenderer<LinkInline>
+    {
+        protected override void Write(HtmlRenderer renderer, LinkInline link)
+        {
+            var target = link.GetDynamicUrl?.Invoke() ?? link.Url ?? "";
+            if (link.IsImage)
+            {
+                var source = ImageSource(target, origin);
+                var alt = string.Concat(link.Descendants().Select(node => node switch { LiteralInline text => text.Content.ToString(), CodeInline code => code.Content, _ => "" }));
+                if (source is null) { renderer.WriteEscape("![" + alt + "](" + target + ")"); return; }
+                renderer.Write("<img src=\"").Write(WebUtility.HtmlEncode(source)).Write("\" alt=\"").Write(WebUtility.HtmlEncode(alt))
+                    .Write("\" loading=\"lazy\" decoding=\"async\" referrerpolicy=\"no-referrer\" />");
+                return;
+            }
+            var url = LinkSource(target);
+            if (url is null) { renderer.WriteChildren(link); return; }
+            renderer.Write("<a rel=\"nofollow noopener noreferrer\" href=\"").Write(WebUtility.HtmlEncode(url)).Write("\">");
+            renderer.WriteChildren(link); renderer.Write("</a>");
+        }
+    }
+    private sealed class SafeAutoLinkRenderer : HtmlObjectRenderer<AutolinkInline>
+    {
+        protected override void Write(HtmlRenderer renderer, AutolinkInline link)
+        {
+            var url = link.IsEmail ? null : LinkSource(link.Url);
+            if (url is null) { renderer.WriteEscape(link.Url); return; }
+            renderer.Write("<a rel=\"nofollow noopener noreferrer\" href=\"").Write(WebUtility.HtmlEncode(url)).Write("\">")
+                .WriteEscape(link.Url).Write("</a>");
+        }
+    }
     private static bool IsAssetPath(string path) => Regex.IsMatch(path, @"^/media/images/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
     public static string? ImageSource(string source, string? applicationOrigin)
     {
@@ -59,31 +80,4 @@ public static class ArticleRenderer
             && !uri.Host.EndsWith(".local", StringComparison.OrdinalIgnoreCase) ? uri.AbsoluteUri : null;
     }
 
-    private static string Inline(string text, string? applicationOrigin)
-    {
-        var html = new StringBuilder();
-        var offset = 0;
-        foreach (Match match in Regex.Matches(text, @"`(?<code>[^`]+)`|(?<image>!)?\[(?<label>[^\]]*)\]\((?<url>[^\s)]+)\)"))
-        {
-            html.Append(WebUtility.HtmlEncode(text[offset..match.Index]));
-            if (match.Groups["code"].Success)
-                html.Append("<code>").Append(WebUtility.HtmlEncode(match.Groups["code"].Value)).Append("</code>");
-            else if (match.Groups["image"].Success)
-            {
-                var imageSource = ImageSource(match.Groups["url"].Value, applicationOrigin);
-                if (imageSource is not null)
-                    html.Append("<img src=\"").Append(WebUtility.HtmlEncode(imageSource))
-                        .Append("\" alt=\"").Append(WebUtility.HtmlEncode(match.Groups["label"].Value))
-                        .Append("\" loading=\"lazy\" decoding=\"async\" referrerpolicy=\"no-referrer\" />");
-                else html.Append(WebUtility.HtmlEncode(match.Value));
-            }
-            else if (Uri.TryCreate(match.Groups["url"].Value, UriKind.Absolute, out var uri) &&
-                     (uri.Scheme == "https" || uri.Scheme == "http"))
-                html.Append("<a rel=\"nofollow noopener noreferrer\" href=\"").Append(WebUtility.HtmlEncode(uri.AbsoluteUri))
-                    .Append("\">").Append(WebUtility.HtmlEncode(match.Groups["label"].Value)).Append("</a>");
-            else html.Append(WebUtility.HtmlEncode(match.Value));
-            offset = match.Index + match.Length;
-        }
-        return html.Append(WebUtility.HtmlEncode(text[offset..])).ToString();
-    }
 }

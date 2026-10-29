@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DevSync.Web.Features.Notes.List;
 
 public sealed record NoteItem(Guid Id, string Title, Guid Version, DateTimeOffset UpdatedAt, Guid? NotebookId,
-    string? NotebookName, string[] Tags, int BlockCount, bool IsArchived);
+    string? NotebookName, string[] Tags, int BlockCount, bool IsArchived, Guid? CoverImageId = null);
 public sealed record ViewModel(IReadOnlyList<NoteItem> Notes, IReadOnlyList<NotebookChoice> Notebooks,
     IReadOnlyList<string> Tags, int Page, int Pages, int Total, int Active, int Archived,
     string Search, Guid? NotebookId, string Tag, bool ShowArchived);
@@ -40,14 +40,14 @@ public sealed class Handler(AppDbContext db)
         var rows = await notes.OrderByDescending(n => n.UpdatedAt).ThenByDescending(n => n.Id)
             .Skip((page - 1) * 12).Take(12).Select(n => new
             {
-                n.Id, n.Title, n.Version, n.UpdatedAt, n.NotebookId, n.IsArchived,
+                n.Id, n.Title, n.Version, n.UpdatedAt, n.NotebookId, n.IsArchived, n.CoverImageId,
                 BlockCount = db.StudyNoteBlocks.Count(b => b.NoteId == n.Id)
             }).ToListAsync(ct);
         var ids = rows.Select(n => n.Id).ToArray();
         var tags = await db.StudyNoteTags.AsNoTracking().Where(t => ids.Contains(t.NoteId)).OrderBy(t => t.Name).ToListAsync(ct);
         return new(rows.Select(n => new NoteItem(n.Id, n.Title, n.Version, n.UpdatedAt, n.NotebookId,
             notebooks.FirstOrDefault(book => book.Id == n.NotebookId)?.Name,
-            tags.Where(t => t.NoteId == n.Id).Select(t => t.Name).ToArray(), n.BlockCount, n.IsArchived)).ToList(),
+            tags.Where(t => t.NoteId == n.Id).Select(t => t.Name).ToArray(), n.BlockCount, n.IsArchived, n.CoverImageId)).ToList(),
             notebooks, allTags, page, pages, total, activeCount, archivedCount, search, notebookId, tag, archived);
     }
 }

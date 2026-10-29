@@ -9,6 +9,7 @@
     @if (TempData["Success"] is string reportSuccess) { <p class="rounded-xl bg-brand-50 p-4 text-sm text-brand-700" role="status">@reportSuccess</p> }
     @if (Model.Preview) { <div class="rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm text-brand-700">Private preview of your saved draft. Readers see the published copy.</div> }
     <article class="rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-10 lg:p-12">
+        @if(Model.CoverImageId is not null) { <img src="/blogs/@Model.Id/cover?draft=@Model.Preview.ToString().ToLowerInvariant()" alt="" class="mb-8 aspect-video w-full rounded-2xl object-cover" decoding="async" /> }
         <header class="border-b border-slate-100 pb-8">
             <div class="mb-5 flex flex-wrap gap-2">@foreach (var tag in Model.Tags) { <a href="/blogs?tag=@Uri.EscapeDataString(tag)" class="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">@tag</a> }</div>
             <h1 class="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">@Model.Title</h1><p class="mt-5 text-lg leading-8 text-slate-500">@Model.Summary</p>

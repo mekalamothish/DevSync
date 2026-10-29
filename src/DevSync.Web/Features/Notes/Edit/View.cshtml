@@ -16,6 +16,7 @@
         <partial name="_ValidationSummary" />
         <fieldset disabled="@Model.IsArchived" class="space-y-6">
             <div class="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+                @await Html.PartialAsync("_CoverEditor", new DevSync.Web.Common.Content.CoverEditorModel(Model.CoverImageId, false))
                 <div><label asp-for="Title" class="form-label">Note title</label><input asp-for="Title" class="form-input text-lg" maxlength="160" required placeholder="What are you learning?" /><span asp-validation-for="Title" class="form-error"></span></div>
                 <div class="grid gap-5 sm:grid-cols-2"><div><label asp-for="NotebookId" class="form-label">Notebook</label><select asp-for="NotebookId" class="form-input"><option value="">No notebook</option>@foreach (var notebook in Model.Notebooks) { <option value="@notebook.Id">@notebook.Name</option> }</select><span asp-validation-for="NotebookId" class="form-error"></span></div><div><label asp-for="Tags" class="form-label">Tags</label><input asp-for="Tags" class="form-input" maxlength="154" aria-describedby="note-tags-hint" placeholder="c#, databases, architecture" /><p id="note-tags-hint" class="mt-2 text-xs leading-6 text-slate-500">Up to five comma-separated tags, 30 characters each.</p><span asp-validation-for="Tags" class="form-error"></span></div></div>
             </div>
@@ -32,4 +33,4 @@
         <template id="note-template-@kind">@await Html.PartialAsync("_Block.cshtml", Model, new ViewDataDictionary(ViewData) { ["BlockIndex"] = -1, ["BlockKind"] = kind })</template>
     }
 </div>
-@section Scripts { <link rel="stylesheet" href="~/vendor/code/note-code.css" asp-append-version="true" /><script type="module" src="~/vendor/code/rich-text.js" asp-append-version="true"></script><script type="module" src="~/vendor/code/note-code.js" asp-append-version="true"></script> <script src="~/js/note-editor.js" asp-append-version="true" defer></script> }
+@section Scripts { <script src="~/js/cover-editor.js" asp-append-version="true" defer></script> <link rel="stylesheet" href="~/vendor/code/note-code.css" asp-append-version="true" /><script type="module" src="~/vendor/code/rich-text.js" asp-append-version="true"></script><script type="module" src="~/vendor/code/note-code.js" asp-append-version="true"></script> <script src="~/js/note-editor.js" asp-append-version="true" defer></script> }

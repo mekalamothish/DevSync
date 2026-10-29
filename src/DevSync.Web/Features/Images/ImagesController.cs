@@ -24,6 +24,14 @@ public sealed class ImagesController(Handler handler) : Controller
     [RequestFormLimits(MultipartBodyLengthLimit=6*1024*1024)]
     public async Task<IActionResult> Upload(Guid? teamId, IFormFile? image, string? description, CancellationToken ct)
         => await Finish(await handler.Upload(Actor,teamId,image,description,ct),teamId,ct,"Image uploaded privately. Copy its URL or Markdown below.");
+    [HttpPost("/images/cover-upload")]
+    [RequestSizeLimit(6*1024*1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit=6*1024*1024)]
+    public async Task<IActionResult> UploadCover(IFormFile? image, CancellationToken ct)
+    {
+        var result=await handler.Upload(Actor,null,image,"Cover image",ct);
+        return StatusCode(result.Status,new {id=result.ImageId,error=result.Error});
+    }
     [HttpPost("/images/{id:guid}/visibility")]
     [HttpPost("/teams/{teamId:guid}/images/{id:guid}/visibility")]
     public async Task<IActionResult> Visibility(Guid? teamId, Guid id, Guid version, bool isPublic, CancellationToken ct)

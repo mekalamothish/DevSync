@@ -48,6 +48,71 @@ public sealed class ImageLibraryFlowTests(AccountFixture fixture) : IClassFixtur
             ["version"]=version.ToString(),["isPublic"]=publish.ToString(),["__RequestVerificationToken"]=Field(html,"__RequestVerificationToken")}));
     }
     [Fact]
+    public async Task Covers_round_trip_remain_private_and_publish_only_the_selected_snapshot()
+    {
+        using var owner=fixture.Client();using var other=fixture.Client();using var anonymous=fixture.Client();
+        var actor=await User(owner,"covers");await User(other,"foreigncover");
+        async Task<HttpResponseMessage> Post(HttpClient client,string page,string path,Dictionary<string,string> fields)
+        {
+            fields["__RequestVerificationToken"]=Field(await client.GetStringAsync(page),"__RequestVerificationToken");
+            return await client.PostAsync(path,new FormUrlEncodedContent(fields));
+        }
+        async Task<Guid> Cover(HttpClient client)
+        {
+            using var data=new MultipartFormDataContent();
+            data.Add(new StringContent(Field(await client.GetStringAsync("/images"),"__RequestVerificationToken")),"__RequestVerificationToken");
+            data.Add(new ByteArrayContent(ImageLibraryTests.Png),"image","cover.png");
+            var response=await client.PostAsync("/images/cover-upload",data);Assert.Equal(HttpStatusCode.OK,response.StatusCode);
+            using var json=System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            return json.RootElement.GetProperty("id").GetGuid();
+        }
+        var first=await Cover(owner);var second=await Cover(owner);var foreign=await Cover(other);
+        var create=await Post(owner,"/blogs/mine","/blogs/create",new());
+        var id=Guid.Parse(create.Headers.Location!.OriginalString.Split('/')[2]);var page=$"/blogs/{id}/edit";
+        async Task<Dictionary<string,string>> Fields(Guid? cover) => new() { ["Version"]=Field(await owner.GetStringAsync(page),"Version"),
+            ["Title"]="Cover round trip",["Summary"]="Private then published cover",["Markdown"]="**Formatted** content",["CoverImageId"]=cover?.ToString()??"" };
+        Assert.Equal(HttpStatusCode.Redirect,(await Post(owner,page,$"/blogs/{id}/save",await Fields(first))).StatusCode);
+        Assert.Contains(first.ToString(),await owner.GetStringAsync(page));
+        Assert.Equal(HttpStatusCode.OK,(await owner.GetAsync($"/blogs/{id}/cover?draft=true")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,(await other.GetAsync($"/blogs/{id}/cover?draft=true")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,(await anonymous.GetAsync($"/blogs/{id}/cover")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,(await anonymous.GetAsync($"/media/images/{first}")).StatusCode);
+        var published=await Post(owner,page,$"/blogs/{id}/publish",await Fields(first));Assert.Equal(HttpStatusCode.Redirect,published.StatusCode);
+        Assert.Equal(ImageLibraryTests.Png,await anonymous.GetByteArrayAsync($"/blogs/{id}/cover"));
+        Assert.Contains($"/blogs/{id}/cover",await anonymous.GetStringAsync("/blogs"));
+        Assert.Equal(HttpStatusCode.Redirect,(await Post(owner,page,$"/blogs/{id}/save",await Fields(second))).StatusCode);
+        using(var scope=fixture.Factory.Services.CreateScope())
+        {
+            var db=scope.ServiceProvider.GetRequiredService<AppDbContext>();var post=await db.BlogPosts.SingleAsync(p=>p.Id==id);
+            Assert.Equal(first,post.PublishedCoverImageId);Assert.Equal(second,post.CoverImageId);
+            Assert.False(await db.ImageAssets.AnyAsync(i=>i.OwnerId==actor && i.IsPublic));
+        }
+        Assert.Equal(HttpStatusCode.UnprocessableEntity,(await Post(owner,page,$"/blogs/{id}/save",await Fields(foreign))).StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect,(await Post(owner,page,$"/blogs/{id}/publish",await Fields(second))).StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect,(await Post(owner,page,$"/blogs/{id}/save",await Fields(null))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,(await anonymous.GetAsync($"/blogs/{id}/cover")).StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect,(await Post(owner,page,$"/blogs/{id}/publish",await Fields(null))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,(await anonymous.GetAsync($"/blogs/{id}/cover")).StatusCode);
+
+        var createdNote=await Post(owner,"/notes","/notes/create",new());
+        var noteId=Guid.Parse(createdNote.Headers.Location!.OriginalString.Split('/')[2]);var notePage=$"/notes/{noteId}";
+        async Task<Dictionary<string,string>> NoteFields(Guid? cover) => new() { ["Version"]=Field(await owner.GetStringAsync(notePage),"Version"),
+            ["Title"]="Private note cover",["CoverImageId"]=cover?.ToString()??"" };
+        Assert.Equal(HttpStatusCode.Redirect,(await Post(owner,notePage,notePage+"/save",await NoteFields(first))).StatusCode);
+        Assert.Contains(first.ToString(),await owner.GetStringAsync(notePage));
+        Assert.Contains(notePage+"/cover",await owner.GetStringAsync("/notes"));
+        Assert.Equal(HttpStatusCode.OK,(await owner.GetAsync(notePage+"/cover")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,(await other.GetAsync(notePage+"/cover")).StatusCode);
+        Assert.NotEqual(HttpStatusCode.OK,(await anonymous.GetAsync(notePage+"/cover")).StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity,(await Post(owner,notePage,notePage+"/save",await NoteFields(foreign))).StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect,(await Post(owner,notePage,notePage+"/save",await NoteFields(second))).StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect,(await Post(owner,notePage,notePage+"/save",await NoteFields(null))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,(await owner.GetAsync(notePage+"/cover")).StatusCode);
+        using(var scope=fixture.Factory.Services.CreateScope())
+            Assert.Equal(2,await scope.ServiceProvider.GetRequiredService<AppDbContext>().ImageAssets.CountAsync(i=>i.OwnerId==actor));
+    }
+
+    [Fact]
     public async Task Personal_library_is_private_public_links_are_explicit_and_revocable()
     {
         using var owner=fixture.Client(); using var other=fixture.Client(); using var anonymous=fixture.Client();

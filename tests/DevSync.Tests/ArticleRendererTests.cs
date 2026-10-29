@@ -47,12 +47,29 @@ public sealed class ArticleRendererTests
     [Fact]
     public void Headings_lists_code_and_http_links_render_and_unclosed_code_fences_are_safe()
     {
-        var html = ArticleRenderer.Render("# Heading\n- item\n`<inline>` [Docs](https://example.com/?a=1&b=2)\n```\n<script>");
-        Assert.Contains("<h2>Heading</h2>", html);
-        Assert.Contains("<ul><li>item</li></ul>", html);
+        var html = ArticleRenderer.Render("# Heading\n- item\n\n`<inline>` [Docs](https://example.com/?a=1&b=2)\n```\n<script>");
+        Assert.Contains("<h2 id=\"heading\">Heading</h2>", html);
+        Assert.Contains("<li>item</li>", html);
         Assert.Contains("<code>&lt;inline&gt;</code>", html);
         Assert.Contains("a=1&amp;b=2", html);
         Assert.Contains("<pre><code>&lt;script&gt;", html);
-        Assert.EndsWith("</code></pre>", html);
+        Assert.EndsWith("</code></pre>", html.TrimEnd());
+    }
+    [Fact]
+    public void Common_markdown_tables_emphasis_nested_lists_quotes_and_toc_links_render()
+    {
+        var html=ArticleRenderer.Render("## 1. What is RxJS?\n\n**Bold** and *italic* and ~~old~~.\n\n[Read section](#1-what-is-rxjs)\n\n| Feature | Value |\n| --- | --- |\n| **State** | `active` |\n\n1. First\n2. Second\n   - Nested\n\n> A quote\n\n---");
+        Assert.Contains("<strong>Bold</strong>",html);Assert.Contains("<em>italic</em>",html);
+        Assert.Contains("<table>",html);Assert.Contains("<th>Feature</th>",html);
+        Assert.Contains("<strong>State</strong>",html);Assert.Contains("<ol>",html);Assert.Contains("<blockquote>",html);
+        Assert.Contains("id=\"1-what-is-rxjs\"",html);Assert.Contains("href=\"#1-what-is-rxjs\"",html);
+        Assert.Contains("<hr",html);
+    }
+
+    [Fact]
+    public void Encoded_urls_html_and_autolinks_cannot_bypass_link_policy()
+    {
+        var html=ArticleRenderer.Render("<javascript:alert> [x](javascript&#58;alert) ![x](data:image/png;base64,AAAA)\n\n<img src=x onerror=alert(1)>");
+        Assert.DoesNotContain("<a ",html);Assert.DoesNotContain("<img",html);
     }
 }

@@ -12,7 +12,8 @@
         @Html.AntiForgeryToken()
         <input asp-for="Id" type="hidden" /><input asp-for="Version" type="hidden" />
         <partial name="_ValidationSummary" />
-        <div><label asp-for="Title" class="form-label"></label><input asp-for="Title" class="form-input text-lg" maxlength="160" required /><span asp-validation-for="Title" class="form-error"></span></div>
+        @await Html.PartialAsync("_CoverEditor", new DevSync.Web.Common.Content.CoverEditorModel(Model.CoverImageId, true))
+                <div><label asp-for="Title" class="form-label"></label><input asp-for="Title" class="form-input text-lg" maxlength="160" required /><span asp-validation-for="Title" class="form-error"></span></div>
         <div><label asp-for="Summary" class="form-label">Short summary</label><textarea asp-for="Summary" class="form-input" rows="3" maxlength="500" aria-describedby="summary-hint"></textarea><p id="summary-hint" class="mt-2 text-xs text-slate-500">Up to 500 characters. Required when publishing.</p><span asp-validation-for="Summary" class="form-error"></span></div>
         <div><label asp-for="Tags" class="form-label">Tags</label><input asp-for="Tags" class="form-input" maxlength="154" aria-describedby="tags-hint" placeholder="asp.net, c#, architecture" /><p id="tags-hint" class="mt-2 text-xs text-slate-500">Up to five comma-separated tags, 30 characters each.</p><span asp-validation-for="Tags" class="form-error"></span></div>
         <div class="rounded-2xl border border-brand-100 bg-brand-50/50 p-5">
@@ -44,4 +45,4 @@
     <datalist id="code-languages">@foreach(var language in new[]{"C#","JavaScript","TypeScript","JSON","HTML","CSS","SQL","Python","XML","YAML","Markdown","Text"}) { <option value="@language"></option> }</datalist>
     @foreach(var kind in DevSync.Web.Features.Notes.Edit.Handler.Kinds) { <template id="note-template-@kind">@await Html.PartialAsync("~/Features/Notes/Edit/_Block.cshtml",blockModel,new ViewDataDictionary(ViewData){["BlockIndex"]=-1,["BlockKind"]=kind,["BlockRoute"]=$"/blogs/{Model.Id}/blocks"})</template> }
 </div>
-@section Scripts { <link rel="stylesheet" href="~/vendor/code/note-code.css" asp-append-version="true" /><script src="~/js/note-editor.js" asp-append-version="true" defer></script><script type="module" src="~/vendor/code/rich-text.js" asp-append-version="true"></script><script type="module" src="~/vendor/code/note-code.js" asp-append-version="true"></script> }
+@section Scripts { <script src="~/js/cover-editor.js" asp-append-version="true" defer></script> <link rel="stylesheet" href="~/vendor/code/note-code.css" asp-append-version="true" /><script src="~/js/note-editor.js" asp-append-version="true" defer></script><script type="module" src="~/vendor/code/rich-text.js" asp-append-version="true"></script><script type="module" src="~/vendor/code/note-code.js" asp-append-version="true"></script> }

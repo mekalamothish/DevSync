@@ -1,0 +1,10 @@
+@model DevSync.Web.Common.Content.CoverEditorModel
+<section data-cover-editor class="space-y-4 rounded-2xl border border-slate-200 bg-canvas p-5" aria-label="Cover image">
+    <div><h2 class="text-base font-semibold">Cover image <span class="text-sm font-normal text-slate-500">(optional)</span></h2><p class="mt-1 text-xs leading-6 text-slate-500">Shown on your @(Model.IsBlog ? "blog" : "study note") card. PNG or JPEG, up to 5 MB. A landscape image works best.</p></div>
+    <input type="hidden" name="CoverImageId" value="@Model.ImageId" data-cover-id />
+    <img data-cover-preview src="@(Model.ImageId is Guid id ? $"/media/images/{id}" : null)" hidden="@(Model.ImageId is null)" alt="Selected cover preview" class="aspect-video w-full max-w-xl rounded-xl border border-slate-200 object-cover" />
+    <div class="flex flex-wrap items-end gap-3"><div class="min-w-0 flex-1"><label for="cover-file" class="form-label">Upload or replace cover</label><input id="cover-file" type="file" accept="image/png,image/jpeg" class="form-input" data-cover-file /></div><button type="button" data-cover-remove hidden="@(Model.ImageId is null)" class="rounded-xl border border-brand-200 bg-white px-4 py-3 text-sm font-semibold text-brand-700">Remove cover</button></div>
+    <p data-cover-status role="status" aria-live="polite" class="text-xs leading-6 text-slate-500">@(Model.ImageId is null ? "No cover selected." : "Your saved cover is shown above.")</p>
+    <p class="text-xs leading-6 text-slate-500">Uploads are stored privately in My images. @(Model.IsBlog ? "Publishing makes the selected cover visible with the article. Draft replacements stay private until you publish again." : "Your note and its cover stay private.") Removing or replacing a cover keeps the uploaded image in your library.</p>
+    <noscript><p class="text-xs text-slate-500">Enable JavaScript to upload or remove a cover.</p></noscript>
+</section>

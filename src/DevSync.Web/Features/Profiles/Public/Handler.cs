@@ -13,7 +13,7 @@ public sealed class Handler(AppDbContext db)
         var posts=db.BlogPosts.AsNoTracking().Where(p=>p.AuthorId==profile.UserId && p.PublishedAt!=null && !p.IsHidden);
         var total=await posts.CountAsync(ct);var pages=Math.Max(1,(total+11)/12);page=Math.Clamp(page,1,pages);
         var rows=await posts.OrderByDescending(p=>p.PublishedAt).ThenByDescending(p=>p.Id).Skip((page-1)*12).Take(12)
-            .Select(p=>new Blogs.Explore.ArticleCard(p.Id,p.PublishedTitle!,p.PublishedSummary!,p.Slug,profile.DisplayName,p.PublishedAt!.Value,Array.Empty<string>())).ToListAsync(ct);
+            .Select(p=>new Blogs.Explore.ArticleCard(p.Id,p.PublishedTitle!,p.PublishedSummary!,p.Slug,profile.DisplayName,p.PublishedAt!.Value,Array.Empty<string>(),true,p.PublishedCoverImageId)).ToListAsync(ct);
         var verified=await db.PublisherVerifications.AnyAsync(v=>v.UserId==profile.UserId && v.Status=="approved",ct);
         return new(profile.Handle,profile.DisplayName,profile.Bio,verified,rows,page,pages,total);
     }

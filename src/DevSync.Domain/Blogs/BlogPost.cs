@@ -6,6 +6,8 @@ public sealed class BlogPost
     public Guid AuthorId { get; set; }
     public bool IsHidden { get; set; }
     public string Title { get; set; } = "Untitled article";
+    public Guid? CoverImageId { get; set; }
+    public Guid? PublishedCoverImageId { get; set; }
     public string Summary { get; set; } = "";
     public string Markdown { get; set; } = "";
     public string EditorFormat { get; set; } = "markdown";

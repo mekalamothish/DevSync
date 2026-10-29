@@ -23,6 +23,8 @@ public sealed class BlogConfiguration : IEntityTypeConfiguration<BlogPost>, IEnt
         b.Property(p => p.PublishedBlocksJson).HasColumnType("text").HasDefaultValue("[]");
         b.Property(p => p.PublishedRichText).HasMaxLength(60000).HasDefaultValue("");
         b.ToTable(t=>t.HasCheckConstraint("CK_BlogPosts_EditorFormats","\"EditorFormat\" IN ('markdown','blocks','richtext') AND \"PublishedEditorFormat\" IN ('markdown','blocks','richtext')"));
+        b.HasOne<DevSync.Domain.Images.ImageAsset>().WithMany().HasForeignKey(x => x.CoverImageId).OnDelete(DeleteBehavior.SetNull);
+        b.HasOne<DevSync.Domain.Images.ImageAsset>().WithMany().HasForeignKey(x => x.PublishedCoverImageId).OnDelete(DeleteBehavior.SetNull);
         b.Property(p => p.DraftTags).HasMaxLength(154);
         b.Property(p => p.PublishedTitle).HasMaxLength(160);
         b.Property(p => p.PublishedSummary).HasMaxLength(500);

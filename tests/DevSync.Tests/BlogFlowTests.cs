@@ -160,7 +160,7 @@ public sealed class BlogFlowTests(AccountFixture fixture) : IClassFixture<Accoun
         Assert.Contains("&lt;script&gt;", preview);
         Assert.DoesNotContain("<script>alert", preview);
         Assert.DoesNotContain("href=\"javascript:", preview);
-        Assert.Contains("<pre><code>", preview);
+        Assert.Contains("<pre><code class=\"language-csharp\">", preview);
         Assert.Contains("<img src=\"https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/index/_static/request-delegate-pipeline.png\"", preview);
         Assert.Contains("href=\"https://example.com/docs\"", preview);
         Assert.DoesNotContain("Middleware explained", await anonymous.GetStringAsync("/blogs"));

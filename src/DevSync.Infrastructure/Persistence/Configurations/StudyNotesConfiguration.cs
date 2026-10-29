@@ -25,6 +25,7 @@ public sealed class StudyNotesConfiguration : IEntityTypeConfiguration<StudyNote
         b.ToTable("StudyNotes");
         b.HasKey(n => n.Id);
         b.HasAlternateKey(n => new { n.Id, n.OwnerId });
+        b.HasOne<DevSync.Domain.Images.ImageAsset>().WithMany().HasForeignKey(x => x.CoverImageId).OnDelete(DeleteBehavior.SetNull);
         b.Property(n => n.Title).HasMaxLength(160);
         b.Property(n => n.Version).IsConcurrencyToken();
         b.HasIndex(n => new { n.OwnerId, n.IsArchived, n.UpdatedAt });
